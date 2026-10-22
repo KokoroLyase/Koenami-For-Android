@@ -24,6 +24,9 @@ import local.koenami.android.files.ExportCoordinator
 import local.koenami.android.files.FileChooserCoordinator
 import local.koenami.android.permissions.MicrophonePermissionCoordinator
 import local.koenami.android.web.OriginPolicy
+import local.koenami.android.web.WebViewFactory
+import local.koenami.android.web.OfficialWebViewClient
+import local.koenami.android.settings.AppPreferences
 import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
@@ -34,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var microphone: MicrophonePermissionCoordinator
     private lateinit var chooser: FileChooserCoordinator
     private lateinit var exports: ExportCoordinator
+    private lateinit var preferences: AppPreferences
     private var foreground = false
     private var epoch = 0
     private var session = ""
@@ -45,12 +49,14 @@ class MainActivity : AppCompatActivity() {
     private fun trusted() = foreground && committed && OriginPolicy.training(web.url)
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
+        preferences = AppPreferences(this)
+        safe = preferences.safeMode
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(24, 24, 32)) }
         val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        bar.addView(TextView(this).apply { text = "Koenami · M0"; setTextColor(Color.WHITE); textSize = 17f; setPadding(16, 12, 4, 12) }, LinearLayout.LayoutParams(0, -2, 1f))
+        bar.addView(TextView(this).apply { text = "Koenami · 普通话"; setTextColor(Color.WHITE); textSize = 17f; setPadding(16, 12, 4, 12) }, LinearLayout.LayoutParams(0, -2, 1f))
         bar.addView(Button(this).apply { text = "恢复 / 工具"; contentDescription = "应用恢复及验证工具"; setOnClickListener { menu() } })
         root.addView(bar)
-        message = TextView(this).apply { textSize = 12f; setTextColor(Color.LTGRAY); setPadding(16, 0, 16, 6); text = "M0 技术验证；兼容性与保存尚未确认" }
+        message = TextView(this).apply { textSize = 12f; setTextColor(Color.LTGRAY); setPadding(16, 0, 16, 6); text = "正在连接普通话官网…" }
         root.addView(message); setContentView(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
@@ -76,53 +82,23 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun createWebView() {
         committed = false
-        web = WebView(this)
-        web.settings.apply {
-            javaScriptEnabled = true; domStorageEnabled = true
-            allowFileAccess = false; allowContentAccess = true
-            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            mediaPlaybackRequiresUserGesture = true; setSupportMultipleWindows(false)
-            javaScriptCanOpenWindowsAutomatically = false
-            safeBrowsingEnabled = true
-        }
-        CookieManager.getInstance().setAcceptThirdPartyCookies(web, false)
-        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
-        web.webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                if (!request.isForMainFrame) return !OriginPolicy.training(request.url.toString())
-                val url = request.url.toString()
-                if (OriginPolicy.training(url)) return false
-                if (request.hasGesture() && !request.isRedirect && OriginPolicy.external(url)) openExternal(url)
-                else status("已拦截未认可导航")
-                return true
-            }
-            override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
+        web = WebViewFactory.create(this)
+        web.webViewClient = OfficialWebViewClient(
+            pageStarted = {
                 epoch++; committed = false; session = UUID.randomUUID().toString()
                 microphone.invalidate(); chooser.cancel(); exports.setSession(session)
-                if (!OriginPolicy.training(url)) { view.stopLoading(); status("主文档地址不受信任，请从恢复菜单重新打开官网") }
-            }
-            override fun onPageCommitVisible(view: WebView, url: String?) {
+            },
+            pageCommitted = { url ->
                 committed = OriginPolicy.training(url)
-                if (committed) enhancement.bind(session)
-            }
-            override fun onPageFinished(view: WebView, url: String?) {
-                if (committed && OriginPolicy.training(url)) enhancement.bind(session)
-            }
-            override fun onReceivedSslError(view: WebView, request: SslErrorHandler, error: SslError) {
-                request.cancel(); status("证书错误，已取消连接；请检查网络和时间")
-            }
-            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                if (request.isForMainFrame) status("官网加载失败；数据保留，可从工具菜单重试")
-            }
-            override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
-                if (request.isForMainFrame || response.statusCode in listOf(403, 429, 500, 502, 503)) status("官网 HTTP ${response.statusCode}；请稍后重试")
-            }
-            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                if (committed) { enhancement.bind(session); status("已连接普通话官网") }
+            },
+            pageFinished = { url -> if (committed && OriginPolicy.training(url)) enhancement.bind(session) },
+            external = ::openExternal, status = ::status,
+            rendererGone = {
                 committed = false; epoch++; microphone.invalidate(); chooser.cancel(); exports.setSession("")
-                handler.post { rebuild(); status("网页进程已终止，已重新打开；未提交的录音可能丢失") }
-                return true
+                handler.post { rebuild(); status("网页进程已终止；未提交录音可能丢失") }
             }
-        }
+        )
         web.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: PermissionRequest) { microphone.request(request) }
             override fun onPermissionRequestCanceled(request: PermissionRequest) { microphone.cancel(request) }
@@ -139,7 +115,7 @@ class MainActivity : AppCompatActivity() {
                     .setNegativeButton("取消") { _, _ -> result.cancel() }.setOnCancelListener { result.cancel() }.show(); return true
             }
         }
-        enhancement = EnhancementController(web).apply { this.safe = this@MainActivity.safe }
+        enhancement = EnhancementController(web).apply { this.safe = this@MainActivity.safe; optimized = preferences.optimized }
         if (!safe && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
             WebViewCompat.addWebMessageListener(web, "KoenamiFiles", setOf(OriginPolicy.ORIGIN)) { _, msg, origin, mainFrame, proxy ->
                 if (mainFrame && committed && OriginPolicy.training(web.url) && OriginPolicy.officialOrigin(origin.toString())) {
@@ -163,13 +139,13 @@ class MainActivity : AppCompatActivity() {
         catch (_: Exception) { status("没有可用的系统浏览器") }
     }
     private fun menu() {
-        AlertDialog.Builder(this).setTitle("M0 验证 / 恢复").setItems(arrayOf(
-            "原始官方界面（保留文件适配）", "CSS 注入实验", "纯网页安全模式 / 恢复系统适配", "重新打开普通话官网",
+        AlertDialog.Builder(this).setTitle("应用设置 / 恢复").setItems(arrayOf(
+            "原始官方界面（保留文件适配）", "Android 优化界面", "纯网页安全模式 / 恢复系统适配", "重新打开普通话官网",
             "兼容性诊断", "在系统浏览器打开官网", "隐私、备份与限制"
         )) { _, which -> when (which) {
-            0 -> { enhancement.setVisual(false); status("原始官方界面；系统适配保留") }
-            1 -> { if (safe) status("请先恢复系统适配") else { enhancement.setVisual(true); status("M0 CSS 实验；尚未完成正式 UI 验收") } }
-            2 -> { safe = !safe; rebuild() }
+            0 -> { preferences.optimized = false; enhancement.setVisual(false); status("原始官方界面；系统适配保留") }
+            1 -> { if (safe) status("请先恢复系统适配") else { preferences.optimized = true; enhancement.setVisual(true); status("Android 优化界面") } }
+            2 -> { safe = !safe; preferences.safeMode = safe; rebuild() }
             3 -> { web.loadUrl(OriginPolicy.HOME) }
             4 -> diagnostics()
             5 -> openExternal(OriginPolicy.HOME)
@@ -179,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     private fun diagnostics() {
         val provider = WebViewCompat.getCurrentWebViewPackage(this)
         web.evaluateJavascript("JSON.stringify(window.__koenamiAndroid?.diagnostics() || {safe:true})") { value ->
-            AlertDialog.Builder(this).setTitle("本地 M0 诊断").setMessage("Android ${android.os.Build.VERSION.RELEASE} / API ${android.os.Build.VERSION.SDK_INT}\n${provider?.packageName} ${provider?.versionName}\n主文档受信任：${OriginPolicy.training(web.url)}\n适配器：0.0.1-m0\n$value\n最近暂存文件 SHA-256：${exports.lastDigest}\n能力存在不等于音频测试通过").setPositiveButton("关闭", null).show()
+            AlertDialog.Builder(this).setTitle("本地兼容性诊断").setMessage("Android ${android.os.Build.VERSION.RELEASE} / API ${android.os.Build.VERSION.SDK_INT}\n${provider?.packageName} ${provider?.versionName}\n主文档受信任：${OriginPolicy.training(web.url)}\n适配器：0.0.1-m0\n$value\n最近暂存文件 SHA-256：${exports.lastDigest}\n能力存在不等于音频测试通过").setPositiveButton("关闭", null).show()
         }
     }
     private fun exitPrompt() {

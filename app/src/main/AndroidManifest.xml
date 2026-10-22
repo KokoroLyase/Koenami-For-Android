@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <application android:label="Koenami PoC" android:theme="@style/AppTheme" android:icon="@drawable/ic_launcher"
+    <application android:label="Koenami Android" android:theme="@style/AppTheme" android:icon="@drawable/ic_launcher"
         android:allowBackup="false" android:dataExtractionRules="@xml/data_extraction_rules" android:usesCleartextTraffic="false" android:hardwareAccelerated="true"
         android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize"

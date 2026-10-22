@@ -8,15 +8,16 @@ android {
         applicationId = "local.koenami.android"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
-        versionName = "0.0.2-m0"
+        versionCode = 10000
+        versionName = "1.0"
     }
     buildFeatures { buildConfig = true }
     signingConfigs.getByName("debug") {
         storeFile = rootProject.file(".toolchain/poc-debug.keystore")
     }
     buildTypes {
-        debug { applicationIdSuffix = ".poc"; versionNameSuffix = "-poc" }
+        debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-dev" }
+        create("poc") { initWith(getByName("debug")); applicationIdSuffix = ".poc"; versionNameSuffix = "-poc"; matchingFallbacks += "debug" }
         release { isMinifyEnabled = false }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
