@@ -1,12 +1,12 @@
-html[data-koenami-android][data-koenami-training],html[data-koenami-android][data-koenami-training] body{height:auto!important;min-height:100%;overflow-x:clip;overflow-y:auto}
-html[data-koenami-android][data-koenami-training] .app{height:auto!important;min-height:100dvh;grid-template-rows:auto minmax(0,1fr) auto!important;padding-bottom:var(--koenami-transport-height)}
-html[data-koenami-android][data-koenami-training] .toolbar{min-height:48px;height:auto;flex-wrap:wrap;padding:4px 12px;justify-content:flex-end}
+html[data-koenami-android][data-koenami-training],html[data-koenami-android][data-koenami-training] body{height:100%!important;min-height:0;overflow:hidden}
+html[data-koenami-android][data-koenami-training] .app{display:flex;flex-direction:column;box-sizing:border-box;height:100dvh!important;min-height:0;overflow:hidden;padding-bottom:calc(var(--koenami-transport-height) + var(--koenami-analysis-header-height,48px))}
+html[data-koenami-android][data-koenami-training] .toolbar{flex-shrink:0;min-height:48px;height:auto;flex-wrap:wrap;padding:4px 12px;justify-content:flex-end}
 html[data-koenami-android][data-koenami-training]:not([data-koenami-tools]) .toolbar{display:none!important}
 html[data-koenami-android][data-koenami-training][data-koenami-tools] .toolbar{padding-right:60px}
 html[data-koenami-android][data-koenami-training] .toolbar :is(.brand,.language-control,.toolbar-count){display:none!important}
 html[data-koenami-android][data-koenami-training]:not([data-koenami-tools]) .toolbar>:not(#koenami-android-tools){display:none!important}
 html[data-koenami-android][data-koenami-training] #koenami-android-tools{margin-left:auto;border:0;background:transparent;color:var(--accent);font-weight:600}
-html[data-koenami-android][data-koenami-training] .studio{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;overflow:visible;min-height:0}
+html[data-koenami-android][data-koenami-training] .studio{flex:1;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;align-content:start;gap:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;min-height:0;scroll-padding:8px}
 html[data-koenami-android][data-koenami-training] .target{position:relative;grid-row:1;max-height:none;padding:8px 12px 12px;border-bottom:1px solid var(--line)}
 html[data-koenami-android][data-koenami-training] .target-heading{padding-right:44px;gap:4px}
 html[data-koenami-android][data-koenami-training] #selected-text{font-size:14px;line-height:1.5;-webkit-line-clamp:2;max-height:3em;overflow:hidden}
@@ -26,15 +26,17 @@ html[data-koenami-android][data-koenami-training] .indicator-values strong{font-
 html[data-koenami-android][data-koenami-training] .indicator-values small{font-size:11px;line-height:1.3}
 html[data-koenami-android][data-koenami-training] .indicator-values em{font-size:12px;line-height:1.3}
 html[data-koenami-android][data-koenami-training] #report-button{grid-area:fit;min-width:0;max-width:none;min-height:48px;padding:4px 8px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;white-space:normal;margin:0;border-left:0;border-top:1px solid var(--line);font-size:12px}
-html[data-koenami-android][data-koenami-training] .graph-area{grid-row:3;display:grid;grid-template-rows:minmax(360px,1fr) auto!important;padding:0;min-height:408px;gap:0}
-html[data-koenami-android][data-koenami-training] .graph{position:relative;height:360px;min-height:360px;padding:0;overflow:hidden}
+html[data-koenami-android][data-koenami-training] .graph-area{grid-row:3;display:grid;grid-template-rows:var(--koenami-map-height,320px) auto!important;padding:0;min-height:0;gap:0}
+html[data-koenami-android][data-koenami-training] .graph{position:relative;height:var(--koenami-map-height,320px);min-height:0;padding:0;overflow:hidden}
 html[data-koenami-android][data-koenami-training] #voice-map{width:100%;height:100%;touch-action:none}
-html[data-koenami-android][data-koenami-training] .graph-toolbar{max-width:calc(100% - 105px);flex-wrap:wrap;gap:4px}
-html[data-koenami-android][data-koenami-training] .graph-toolbar button{padding:4px 8px;min-width:48px;min-height:48px}
-html[data-koenami-android][data-koenami-training] .graph-tools{display:flex;gap:0;bottom:8px;right:8px}
-html[data-koenami-android][data-koenami-training] .graph-tools .icon-button{display:grid!important;min-width:48px;min-height:48px}
-html[data-koenami-android][data-koenami-training] .legend{top:auto;bottom:64px;left:10px;right:auto;font-size:12px;max-width:calc(100% - 20px)}
-html[data-koenami-android][data-koenami-training] #koenami-android-map-full{position:absolute;top:8px;right:8px;z-index:2;min-width:88px;border-radius:12px;background:var(--surface)}
+html[data-koenami-android][data-koenami-training] .graph-toolbar{max-width:calc(100% - 88px);flex-wrap:wrap;gap:4px}
+html[data-koenami-android][data-koenami-training] .graph-toolbar button{padding:4px 6px;min-width:36px;min-height:36px;font-size:12px;line-height:1.2;border-radius:9px}
+html[data-koenami-android][data-koenami-training] .graph-tools{display:flex;gap:0;bottom:8px;right:8px;padding:4px;width:max-content;border-radius:10px}
+html[data-koenami-android][data-koenami-training] .graph-tools .icon-button{display:grid!important;min-width:36px;min-height:36px;width:36px;height:36px;padding:4px}
+html[data-koenami-android][data-koenami-training] :is(.graph-toolbar,.graph-tools) svg{width:18px;height:18px}
+html[data-koenami-android][data-koenami-training] .legend{top:auto;bottom:8px;left:10px;right:auto;display:flex;flex-wrap:wrap;gap:4px 8px;font-size:12px;max-width:calc(100% - 184px);white-space:normal}
+html[data-koenami-android][data-koenami-training] .legend>span{white-space:nowrap}
+html[data-koenami-android][data-koenami-training] #koenami-android-map-full{position:absolute;top:8px;right:8px;z-index:2;min-width:64px;min-height:36px;padding:4px 10px;font-size:12px;line-height:1.2;border-radius:10px;background:var(--surface)}
 html[data-koenami-android][data-koenami-training][data-koenami-map-full] #koenami-android-map-full{right:56px}
 html[data-koenami-android][data-koenami-training] .transport{position:fixed;bottom:0;left:0;right:0;z-index:30;min-height:128px;height:auto;padding:8px 10px;gap:8px;border-top:1px solid var(--line);grid-template-columns:minmax(150px,1fr) minmax(0,1fr)}
 html[data-koenami-android][data-koenami-training] #record{width:68px;height:68px;min-width:68px;min-height:68px;border-radius:50%}
@@ -52,7 +54,7 @@ html[data-koenami-android][data-koenami-training][data-koenami-map-full]:not([da
 html[data-koenami-android][data-koenami-training]:is([data-koenami-map-full],[data-koenami-analysis-full]) .transport{position:fixed;bottom:0;left:0;right:0;z-index:45}
 @media(orientation:landscape) and (min-width:640px){
  html[data-koenami-android][data-koenami-training] .studio{grid-template-columns:minmax(0,65fr) minmax(240px,35fr)!important;grid-template-rows:auto 1fr!important;align-items:start}
- html[data-koenami-android][data-koenami-training] .graph-area{grid-column:1;grid-row:1/3;min-height:360px}
+ html[data-koenami-android][data-koenami-training] .graph-area{grid-column:1;grid-row:1/3;min-height:0;grid-template-rows:auto auto!important}
  html[data-koenami-android][data-koenami-training] :is(.target,.profile-panel){grid-column:2;grid-row:auto}
  html[data-koenami-android][data-koenami-training] .graph{height:max(280px,calc(100dvh - 220px));min-height:280px}
  html[data-koenami-android][data-koenami-training] .transport{grid-column:1/-1}

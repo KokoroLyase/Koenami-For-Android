@@ -1,7 +1,7 @@
 (() => {
   const a=window.__koenamiAdapter, visual=window.__koenamiVisual;
   const root=document.documentElement;
-  let nodes=[],listeners=[],resize,focusBefore;
+  let nodes=[],listeners=[],resize,focusBefore,frame;
   const attr=(name,on)=>root.toggleAttribute(`data-koenami-${name}`,on);
   const button=(id,text,parent,handler)=>{
     const b=document.createElement('button');b.id=`koenami-android-${id}`;b.type='button';b.textContent=text;
@@ -25,11 +25,21 @@
       button('map-full','全屏',document.querySelector('.graph'),b=>{
         if(leave())return;focusBefore=document.activeElement;attr('map-full',true);b.textContent='退出全屏';b.focus({preventScroll:true});
       });
-      const update=()=>{const height=Math.ceil(a.one('transport').getBoundingClientRect().height);root.style.setProperty('--koenami-transport-height',`${height}px`);};
-      resize=new ResizeObserver(update);resize.observe(a.one('transport'));update();
+      const update=()=>{
+        const set=(name,value)=>{if(root.style.getPropertyValue(name)!==value)root.style.setProperty(name,value);};
+        set('--koenami-transport-height',`${Math.ceil(a.one('transport').getBoundingClientRect().height)}px`);
+        const studio=document.querySelector('.studio');
+        const available=studio.clientHeight-document.querySelector('.target').getBoundingClientRect().height-a.one('profile').getBoundingClientRect().height;
+        set('--koenami-map-height',`${Math.max(220,Math.min(360,Math.floor(available)))}px`);
+      };
+      const schedule=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(update);};
+      resize=new ResizeObserver(schedule);
+      for(const e of [a.one('transport'),document.querySelector('.studio'),document.querySelector('.target'),a.one('profile')])resize.observe(e);
+      schedule();
     },
     back:leave,
-    unmount(){leave();resize?.disconnect();for(const [b,l] of listeners)b.removeEventListener('click',l);listeners=[];nodes.forEach(n=>n.remove());nodes=[];
-      for(const name of ['training','tools','reference-open','map-full'])attr(name,false);root.style.removeProperty('--koenami-transport-height');}
+    unmount(){leave();resize?.disconnect();cancelAnimationFrame(frame);for(const [b,l] of listeners)b.removeEventListener('click',l);listeners=[];nodes.forEach(n=>n.remove());nodes=[];
+      for(const name of ['training','tools','reference-open','map-full'])attr(name,false);
+      for(const name of ['--koenami-transport-height','--koenami-map-height'])root.style.removeProperty(name);}
   });
 })();
