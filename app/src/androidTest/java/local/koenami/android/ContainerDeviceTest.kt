@@ -58,4 +58,35 @@ class ContainerDeviceTest {
         assertEquals("true",js("(()=>{window.__koenamiAndroid.visual(false);return !document.documentElement.hasAttribute('data-koenami-android')&&!!window.KoenamiFiles&&!!window.__koenamiAndroid.stopCapture;})()"))
         js("window.__koenamiAndroid.visual(true)")
     }
+    @Test fun importedAudioSurvivesSignedUpgrade() {
+        val verifyOnly = androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("upgradeCheck") == "true"
+        if (!verifyOnly) js("""
+            (()=>{
+              const rate=16000,count=rate*5,bytes=new Uint8Array(44+count*2),v=new DataView(bytes.buffer);
+              const text=(at,s)=>{for(let i=0;i<s.length;i++)bytes[at+i]=s.charCodeAt(i)};
+              text(0,'RIFF');v.setUint32(4,36+count*2,true);text(8,'WAVE');text(12,'fmt ');
+              v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+              v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+              text(36,'data');v.setUint32(40,count*2,true);
+              for(let i=0;i<count;i++)v.setInt16(44+i*2,Math.round(8000*Math.sin(2*Math.PI*160*i/rate)),true);
+              const transfer=new DataTransfer();transfer.items.add(new File([bytes],'Koenami-upgrade-fixture.wav',{type:'audio/wav'}));
+              const input=document.getElementById('upload');input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));return true;
+            })()
+        """.trimIndent())
+        val end=System.currentTimeMillis()+60000
+        while(System.currentTimeMillis()<end){
+            val found=js("Array.from(document.querySelectorAll('#take-select option')).some(e=>e.textContent.includes('Koenami-upgrade-fixture'))")
+            if(found=="true"){
+                js("(()=>{const s=document.getElementById('take-select'),o=Array.from(s.querySelectorAll('option')).find(e=>e.textContent.includes('Koenami-upgrade-fixture'));s.value=o.value;s.dispatchEvent(new Event('change',{bubbles:true}));})()")
+                val loaded=System.currentTimeMillis()+15000
+                while(System.currentTimeMillis()<loaded){
+                    if(js("(()=>{const p=document.getElementById('player');return Number.isFinite(p.duration)&&Math.abs(p.duration-5)<0.01&&p.readyState>=1;})()") == "true")return
+                    Thread.sleep(200)
+                }
+                fail("Saved fixture was listed but its five-second audio did not load")
+            }
+            Thread.sleep(250)
+        }
+        fail("The imported fixture did not appear in official recording history")
+    }
 }

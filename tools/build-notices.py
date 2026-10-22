@@ -3,12 +3,15 @@ Run Gradle writeRuntimeInventory first. Never includes test/build-only dependenc
 """
 from pathlib import Path
 import io
+import os
 import json
 import zipfile
 import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parents[1]
-cache = root / '.toolchain/gradle-home/caches/modules-2/files-2.1'
+local_cache = root / '.toolchain/gradle-home'
+gradle_home = Path(os.environ.get('GRADLE_USER_HOME', str(local_cache if local_cache.exists() else Path.home()/'.gradle')))
+cache = gradle_home / 'caches/modules-2/files-2.1'
 items = []
 notices = []
 ns = {'m': 'http://maven.apache.org/POM/4.0.0'}

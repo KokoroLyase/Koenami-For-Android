@@ -9,6 +9,10 @@
 *.toml text eol=lf
 *.ps1 text eol=lf
 *.py text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.pem text eol=lf
 *.bat text eol=crlf
 gradlew text eol=lf
 *.jar binary

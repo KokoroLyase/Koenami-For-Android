@@ -164,7 +164,7 @@ class MainActivity : AppCompatActivity() {
             3 -> stopBefore { web.loadUrl(OriginPolicy.HOME) }
             4 -> diagnostics()
             5 -> openExternal(OriginPolicy.HOME)
-            6 -> AlertDialog.Builder(this).setTitle("非官方开源客户端").setMessage("训练内容、Worker/WASM、API 与官网原有统计由官网提供。应用不新增统计。实时模式不新增历史。进入后台请求官网停止普通录音并保存；未提交录音遇到异常终止可能丢失。卸载或清除数据会丢失本地历史；官网 ZIP 并非完整数据库恢复包。PoC 数据与正式包隔离。不要将本原型作为唯一音频副本。").setPositiveButton("知道了", null).show()
+            6 -> AlertDialog.Builder(this).setTitle("非官方开源客户端").setMessage("训练内容、Worker/WASM、API 与官网原有统计由官网提供。应用不新增统计。实时模式不新增历史。进入后台请求官网停止普通录音并保存；未提交录音遇到异常终止可能丢失。卸载或清除数据会丢失本地历史；官网 ZIP 并非完整数据库恢复包。建议定期将重要录音导出到应用之外。").setPositiveButton("知道了", null).show()
             7 -> licenses()
             8 -> openExternal("https://play.google.com/store/apps/details?id=com.google.android.webview")
             9 -> web.evaluateJavascript("(()=>{const b=document.getElementById('koenami-android-tools');if(b)b.click();window.scrollTo(0,0)})()",null)

@@ -8,16 +8,16 @@ android {
         applicationId = "local.koenami.android"
         minSdk = 29
         targetSdk = 37
-        versionCode = if (providers.gradleProperty("finalRelease").orNull == "true") 10000 else 9999
-        versionName = if (providers.gradleProperty("finalRelease").orNull == "true") "1.0" else "1.0-rc.1"
+        versionCode = providers.gradleProperty("overrideVersionCode").orNull?.toInt() ?: 10000
+        versionName = providers.gradleProperty("overrideVersionName").orNull ?: "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { buildConfig = true }
-    signingConfigs.getByName("debug") {
-        val localDebugKey = rootProject.file(".toolchain/poc-debug.keystore")
-        if (localDebugKey.exists()) storeFile = localDebugKey
-    }
     val releaseKey = providers.environmentVariable("KOENAMI_KEYSTORE").orNull
+    if (providers.gradleProperty("enableRelease").orNull == "true") {
+        require(!releaseKey.isNullOrBlank() && file(releaseKey).isFile) { "A private KOENAMI_KEYSTORE is required for Release" }
+        require(!providers.environmentVariable("KOENAMI_STORE_PASSWORD").orNull.isNullOrBlank()) { "KOENAMI_STORE_PASSWORD is required" }
+    }
     if (releaseKey != null) signingConfigs.create("localRelease") {
         storeFile = file(releaseKey)
         storePassword = providers.environmentVariable("KOENAMI_STORE_PASSWORD").orNull
@@ -26,7 +26,6 @@ android {
     }
     buildTypes {
         debug { applicationIdSuffix = ".debug"; versionNameSuffix = "-dev" }
-        create("poc") { initWith(getByName("debug")); applicationIdSuffix = ".poc"; versionNameSuffix = "-poc"; matchingFallbacks += "debug" }
         release {
             isMinifyEnabled = false
             if (releaseKey != null) signingConfig = signingConfigs.getByName("localRelease")
@@ -34,8 +33,9 @@ android {
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     testOptions { unitTests.isReturnDefaultValues = true }
+    testBuildType = if (providers.gradleProperty("enableRelease").orNull == "true") "release" else "debug"
 }
-// Release is an explicit local build. Public distribution additionally requires the user's review.
+// Explicit opt-in prevents accidentally distributing an unsigned Release.
 androidComponents { beforeVariants(selector().withBuildType("release")) {
     it.enable = providers.gradleProperty("enableRelease").orNull == "true"
 }
@@ -55,7 +55,8 @@ dependencies {
 }
 tasks.register("writeRuntimeInventory") {
     doLast {
-        val artifacts = configurations.getByName("debugRuntimeClasspath").resolvedConfiguration.resolvedArtifacts
+        val variant = if (providers.gradleProperty("enableRelease").orNull == "true") "release" else "debug"
+        val artifacts = configurations.getByName("${variant}RuntimeClasspath").resolvedConfiguration.resolvedArtifacts
         val out = layout.buildDirectory.file("runtime-inventory.tsv").get().asFile
         out.parentFile.mkdirs()
         out.writeText(artifacts.sortedBy { it.moduleVersion.id.toString() }.joinToString("\n") {
