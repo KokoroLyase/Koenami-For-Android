@@ -58,7 +58,7 @@ texts = [intro, listing, '\nCLIENT MIT LICENSE\n', (root/'LICENSE').read_text(en
          '\nUPSTREAM KOENAMI MIT LICENSE\n', (root/'LICENSES/MIT-Koenami.txt').read_text(encoding='utf-8'),
          '\nAPACHE LICENSE 2.0\n', (root/'LICENSES/Apache-2.0.txt').read_text(encoding='utf-8'),
          '\nARTIFACT LICENSES AND NOTICES\n', '\n\n'.join(dict.fromkeys(notices))]
-text = '\n'.join(texts)
+text = '\n'.join(texts).rstrip() + '\n'
 (root/'THIRD_PARTY_NOTICES.txt').write_text(text, encoding='utf-8')
 (root/'app/src/main/assets/THIRD_PARTY_NOTICES.txt').write_text(text, encoding='utf-8')
 (root/'docs/runtime-dependencies.json').write_text(json.dumps(items, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
