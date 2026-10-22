@@ -1,6 +1,12 @@
 {
   "auditedSourceSha": "870b7282122e8c290955f17a32898ccb74ee6fcb",
-  "styles": [],
+  "styles": [
+    "styles/tokens.css",
+    "styles/training.css",
+    "styles/analysis.css",
+    "styles/library.css",
+    "styles/history-shadow.css"
+  ],
   "adapterVersion": "1.0",
   "paths": [
     "/zh-CN/",
@@ -9,6 +15,10 @@
   "scripts": [
     "dom-adapter.js",
     "lifecycle.js",
+    "features/training-layout.js",
+    "features/analysis-panel.js",
+    "features/reference-library.js",
+    "features/history-menu.js",
     "interop/runtime.js",
     "bootstrap.js"
   ],

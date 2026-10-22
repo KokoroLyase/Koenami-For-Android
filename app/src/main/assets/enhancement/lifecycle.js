@@ -29,7 +29,15 @@
   window.__koenamiVisual=Object.freeze({
     register(module){if(modules.has(module.id))throw Error('Duplicate enhancement module');modules.set(module.id,module);},
     set,unmount,
-    recheck(){if(desired&&(!window.__koenamiAdapter.core()||!root?.isConnected||root!==window.__koenamiAdapter.one('graph')))set(true);},
+    recheck(){
+      if(!desired)return;
+      if(!window.__koenamiAdapter.core()||!root?.isConnected||root!==window.__koenamiAdapter.one('graph')){set(true);return;}
+      for(const module of modules.values())if(failures.get(module.id)==='structure'){
+        try{if(module.detect()){module.mount();failures.delete(module.id);}}catch(_){try{module.unmount();}catch(_){}failures.set(module.id,'mount');}
+      }
+    },
+    back(){for(const module of [...modules.values()].reverse()){if(module.back?.())return true;}return false;},
+    fail(id,reason){failures.set(id,reason);},
     health:()=>({desired,mounted,modules:[...modules.keys()].filter(id=>!failures.has(id)),failed:Object.fromEntries(failures)})
   });
 })();

@@ -6,6 +6,7 @@
   if (window.__koenamiAndroid) return;
   const selectors = window.__koenamiAdapter.selectors;
   let session = '', suspended = false, enabled = false, busy = false, mounted = false;
+  let starting=false;
   let captureObserver, observerRoot, mountObserver, remountTimer;
   const acks = new Map();
   const originalClick = HTMLAnchorElement.prototype.click;
@@ -23,12 +24,14 @@
   URL.createObjectURL = createAdapter;
   URL.revokeObjectURL = revokeAdapter;
   const q = key => document.querySelector(selectors[key]);
-  const captureState = () => ({
-    record: q('record')?.getAttribute('aria-pressed') === 'true',
-    live: q('live')?.getAttribute('aria-checked') === 'true',
+  const captureState = () => {
+    const record=q('record')?.getAttribute('aria-pressed')==='true',live=q('live')?.getAttribute('aria-checked')==='true';
+    if(record||live||(!q('record')?.disabled&&!q('live')?.disabled))starting=false;
+    return {
+    record,live,starting,
     unknown: !(q('record') instanceof HTMLButtonElement) || !(q('live') instanceof HTMLButtonElement),
     settling: !!q('record')?.disabled && !!q('live')?.disabled
-  });
+  };};
   const stopCapture = () => {
     suspended = true;
     const state = captureState();
@@ -89,7 +92,7 @@
         await send({ op: 'chunk', id, seq: seq++, data: btoa(binary) });
       }
       await send({ op: 'end', id, seq });
-      notice('文件已暂存，请在系统选择器中完成保存');
+      notice('文件已暂存，请选择保存或分享');
     } catch (error) {
       if (began) try { await send({ op: 'cancel', id }); } catch (_) { }
       notice(`导出未完成：${error.message}。官网录音未清除。`);
@@ -132,7 +135,8 @@
     mountObserver.observe(document.body, { childList: true, subtree: true });
   };
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', ready, { once: true }) : ready();
-  document.addEventListener('visibilitychange', () => { if (document.hidden) stopCapture(); });
+  const onVisibility=()=>{if(document.hidden)stopCapture();};
+  document.addEventListener('visibilitychange', onVisibility);
   window.addEventListener('pagehide', stopCapture);
   const back = () => {
     const roots = [document, ...[...document.querySelectorAll('koe-select')].map(el => el.shadowRoot).filter(Boolean)];
@@ -145,11 +149,12 @@
       const close = dialog.querySelector('[data-close]');
       if (close) { close.click(); return true; }
     }
-    return false;
+    return window.__koenamiVisual.back();
   };
   window.__koenamiAndroid = Object.freeze({
     bind(value, optimized) { session = value; mount(); visual(optimized); },
     foreground() { suspended = false; },
+    permissionGranted(){starting=true;},
     visual, captureState, stopCapture, back,
     diagnostics: () => ({ adapter: '1.0', modules: window.__koenamiVisual.health(), mounted, enhanced: document.documentElement.hasAttribute('data-koenami-android'),
       secureContext: window.isSecureContext, getUserMedia: !!navigator.mediaDevices?.getUserMedia,
@@ -158,6 +163,9 @@
       indexedDB: !!window.indexedDB, popover: 'showPopover' in HTMLElement.prototype,
       resizeObserver: !!window.ResizeObserver, pointerEvents: !!window.PointerEvent, weakRef: typeof WeakRef === 'function', bridge: !!session }),
     unmount() {
+      document.removeEventListener('DOMContentLoaded',ready);
+      document.removeEventListener('visibilitychange',onVisibility);
+      window.removeEventListener('pagehide',stopCapture);
       visual(false); captureObserver?.disconnect(); mountObserver?.disconnect(); clearTimeout(remountTimer);
       if (HTMLAnchorElement.prototype.click === clickAdapter) HTMLAnchorElement.prototype.click = originalClick;
       if (URL.createObjectURL === createAdapter) URL.createObjectURL = originalCreate;
@@ -165,6 +173,8 @@
       objectUrls.clear();
       for (const ack of acks.values()) { clearTimeout(ack.timer); ack.reject(new Error('适配已卸载')); }
       acks.clear(); session = '';
+      if(window.KoenamiFiles)window.KoenamiFiles.onmessage=null;
+      delete window.__koenamiAndroid;
     }
   });
 })();
