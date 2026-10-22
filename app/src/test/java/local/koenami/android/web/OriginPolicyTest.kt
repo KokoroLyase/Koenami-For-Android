@@ -4,6 +4,13 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class OriginPolicyTest {
+    @Test fun bridgeRequiresOfficialOriginMainFrameAndTrainingDocument() {
+        assertTrue(OriginPolicy.bridge(OriginPolicy.ORIGIN,true,OriginPolicy.HOME))
+        assertFalse(OriginPolicy.bridge(OriginPolicy.ORIGIN,false,OriginPolicy.HOME))
+        assertFalse(OriginPolicy.bridge("https://evil.example",true,OriginPolicy.HOME))
+        assertFalse(OriginPolicy.bridge(OriginPolicy.ORIGIN,true,"https://koe.transnavi.jp/ja/"))
+        assertFalse(OriginPolicy.bridge("https://koe.transnavi.jp:444",true,OriginPolicy.HOME))
+    }
     @Test fun trustedTrainingOnly() {
         assertTrue(OriginPolicy.training(OriginPolicy.HOME))
         assertTrue(OriginPolicy.training("https://koe.transnavi.jp:443/zh-CN/#map"))

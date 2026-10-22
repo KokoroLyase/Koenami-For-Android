@@ -16,4 +16,5 @@ object OriginPolicy {
     fun external(value: String?): Boolean = parse(value)?.let {
         it.scheme.equals("https", true) && !it.host.isNullOrEmpty() && it.rawUserInfo == null
     } ?: false
+    fun bridge(source: String?, mainFrame: Boolean, document: String?) = mainFrame && officialOrigin(source) && training(document)
 }

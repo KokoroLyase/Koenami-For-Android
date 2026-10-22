@@ -20,6 +20,7 @@ object WebViewFactory {
             setSupportMultipleWindows(false)
             javaScriptCanOpenWindowsAutomatically = false
             safeBrowsingEnabled = true
+            textZoom = (context.resources.configuration.fontScale * 100).toInt()
         }
         CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)

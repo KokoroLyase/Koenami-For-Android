@@ -12,7 +12,8 @@ class MicrophonePermissionCoordinator(
     private val activity: AppCompatActivity,
     private val trusted: () -> Boolean,
     private val generation: () -> Int,
-    private val status: (String) -> Unit
+    private val status: (String) -> Unit,
+    private val onGranted: () -> Unit = {}
 ) {
     private var pending: PermissionRequest? = null
     private var epoch = -1
@@ -24,7 +25,7 @@ class MicrophonePermissionCoordinator(
         pending = null
         if (request != null) {
             if (allowed && epoch == generation() && trusted() && OriginPolicy.officialOrigin(request.origin.toString())) {
-                request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
+                onGranted(); request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
                 status("麦克风已授权；录音由官网处理")
             } else { request.deny(); status("麦克风未授权或页面已离开") }
         }
@@ -35,7 +36,7 @@ class MicrophonePermissionCoordinator(
             request.deny(); return
         }
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)); return
+            onGranted(); request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)); return
         }
         pending = request; epoch = generation(); systemPrompt = true
         status("等待系统麦克风授权")

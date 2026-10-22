@@ -10,6 +10,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
+import androidx.lifecycle.Lifecycle
+import android.content.Intent
 
 /** One bounded export, no page-supplied paths or network URLs. I/O is serialized off the UI thread. */
 class ExportCoordinator(private val activity: AppCompatActivity, private val status: (String) -> Unit) {
@@ -22,10 +27,17 @@ class ExportCoordinator(private val activity: AppCompatActivity, private val sta
     private var ready: File? = null
     @Volatile private var currentSession = ""
     private var saving = false
+    private var awaitingChoice = false
+    private var readyName = ""
+    private var readyMime = ""
+    @Volatile private var pickerOpen = false
+    @Volatile private var closed = false
+    private var offerDialog: AlertDialog? = null
     private var timeout: Runnable? = null
     private val saveLauncher = activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        pickerOpen = false
         val uri = if (result.resultCode == AppCompatActivity.RESULT_OK) result.data?.data else null
-        io.execute {
+        enqueue {
             val file = ready
             if (file != null && uri != null && uri.scheme == "content") {
                 try {
@@ -41,19 +53,24 @@ class ExportCoordinator(private val activity: AppCompatActivity, private val sta
             file?.delete(); ready = null; saving = false
         }
     }
-    var lastDigest: String = ""
+    @Volatile var lastDigest: String = ""
         private set
-    init { dir.listFiles()?.forEach { it.delete() } }
+    init {
+        dir.listFiles()?.forEach { it.delete() }
+        File(activity.cacheDir,"share").listFiles()?.filter { System.currentTimeMillis()-it.lastModified()>86400000L }?.forEach { it.deleteRecursively() }
+    }
+    private fun enqueue(block: () -> Unit) { if (!closed) try { io.execute(block) } catch (_: RejectedExecutionException) { } }
     fun setSession(session: String) {
         currentSession = session
-        io.execute { clearTransfer(); ready?.delete(); ready = null }
+        offerDialog?.dismiss(); offerDialog = null
+        enqueue { clearTransfer(); ready?.delete(); ready = null; awaitingChoice = false; saving = pickerOpen }
     }
     private fun clearTransfer() {
         transfer?.let { try { it.out.close() } catch (_: Exception) { }; it.file.delete() }
         transfer = null
     }
     fun receive(payload: String, session: String, reply: (String) -> Unit) {
-        io.execute {
+        enqueue {
             var id = ""; var seq = -1
             try {
                 require(payload.length <= 68000 && session == currentSession)
@@ -64,23 +81,22 @@ class ExportCoordinator(private val activity: AppCompatActivity, private val sta
                 when (m.getString("op")) {
                     "begin" -> {
                         require(transfer == null && ready == null && !saving)
-                        val size = m.getLong("size"); require(size in 1..536870912L)
+                        require(m.get("size") is Number && m.getDouble("size") == m.getLong("size").toDouble())
+                        val size = m.getLong("size"); require(TransferPolicy.size(size,dir.usableSpace))
                         val name = m.getString("name")
-                        require(name.length in 1..160 && name != "." && name != ".." &&
-                            !name.any { it < ' ' || it in "/\\:*?\"<>|" })
                         val mime = m.getString("mime")
-                        require(mime in setOf("audio/wav", "audio/x-wav", "application/zip", "application/json", "image/png", "text/html"))
-                        require(dir.usableSpace > size + 16777216L)
+                        require(TransferPolicy.nameAndType(name,mime))
                         val file = File.createTempFile("export-", ".part", dir)
                         transfer = Transfer(id, session, name, mime, size, file, FileOutputStream(file))
                     }
                     "chunk" -> {
                         val t = requireNotNull(transfer)
-                        require(t.id == id && t.generation == session && seq == t.seq)
+                        require(t.id == id && t.generation == session && m.get("seq") is Number && m.getDouble("seq") == seq.toDouble())
                         val encoded = m.getString("data")
                         require(encoded.length <= 65536 && encoded.matches(Regex("[A-Za-z0-9+/]*={0,2}")))
                         val bytes = Base64.decode(encoded, Base64.NO_WRAP)
-                        require(bytes.size in 1..49152 && t.received + bytes.size <= t.size)
+                        require(Base64.encodeToString(bytes,Base64.NO_WRAP) == encoded)
+                        require(TransferPolicy.chunk(t.seq,seq,t.received,bytes.size,t.size))
                         require(dir.usableSpace > bytes.size + 1048576L)
                         t.out.write(bytes); t.received += bytes.size; t.seq++
                     }
@@ -95,17 +111,8 @@ class ExportCoordinator(private val activity: AppCompatActivity, private val sta
                         }
                         lastDigest = digest.digest().joinToString("") { "%02x".format(it) }
                         require(session == currentSession)
-                        transfer = null; ready = t.file; saving = true
-                        main.post {
-                            if (currentSession != session || activity.isFinishing) {
-                                io.execute { ready?.delete(); ready = null; saving = false }
-                            } else {
-                                try { saveLauncher.launch(android.content.Intent(android.content.Intent.ACTION_CREATE_DOCUMENT).apply {
-                                    addCategory(android.content.Intent.CATEGORY_OPENABLE)
-                                    type = t.mime; putExtra(android.content.Intent.EXTRA_TITLE, t.name)
-                                }) } catch (_: Exception) { io.execute { ready?.delete(); ready = null; saving = false }; status("无法打开保存选择器") }
-                            }
-                        }
+                        transfer = null; ready = t.file; readyName=t.name;readyMime=t.mime;saving=true;awaitingChoice=true
+                        main.post { offer(session) }
                     }
                     "cancel" -> { require(transfer?.id == id); clearTransfer() }
                     else -> error("Unsupported export message")
@@ -113,7 +120,7 @@ class ExportCoordinator(private val activity: AppCompatActivity, private val sta
                 val response = JSONObject().put("id", id).put("seq", seq).put("ok", true).toString()
                 main.post { if (session == currentSession) reply(response); armTimeout() }
             } catch (_: Exception) {
-                clearTransfer()
+                if (transfer?.id == id && transfer?.generation == session && session == currentSession) clearTransfer()
                 main.post {
                     if (session == currentSession) reply(JSONObject().put("id", id).put("seq", seq).put("ok", false).toString())
                     status("导出失败或消息被拒绝；官网数据未清除")
@@ -123,8 +130,52 @@ class ExportCoordinator(private val activity: AppCompatActivity, private val sta
     }
     private fun armTimeout() {
         timeout?.let(main::removeCallbacks)
-        timeout = Runnable { io.execute { if (transfer != null) { clearTransfer(); main.post { status("导出传输超时") } } } }
+        timeout = Runnable { enqueue { if (transfer != null) { clearTransfer(); main.post { status("导出传输超时") } } } }
         main.postDelayed(timeout!!, 30000)
     }
-    fun close() { currentSession = ""; timeout?.let(main::removeCallbacks); io.execute { clearTransfer(); ready?.delete() }; io.shutdown() }
+    private fun discard() { enqueue { ready?.delete();ready=null;saving=false;awaitingChoice=false } }
+    private fun offer(token: String) {
+        if (closed || token != currentSession || activity.isFinishing) { discard();return }
+        if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) { status("导出已暂存，返回应用后选择保存或分享");return }
+        if (offerDialog?.isShowing == true) return
+        offerDialog=AlertDialog.Builder(activity).setTitle("导出文件").setMessage(readyName)
+            .setPositiveButton("保存文件") { _, _ ->
+                awaitingChoice=false;pickerOpen=true
+                try {saveLauncher.launch(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE);type=readyMime;putExtra(Intent.EXTRA_TITLE,readyName)
+                })}catch(_:Exception){pickerOpen=false;discard();status("无法打开保存选择器")}
+            }
+            .setNeutralButton("分享") { _, _ -> share(token) }
+            .setNegativeButton("取消") { _, _ -> discard();status("已取消导出") }
+            .setOnCancelListener {discard();status("已取消导出")}.show()
+    }
+    private fun share(token: String) {
+        awaitingChoice=false
+        enqueue {
+            try {
+                val source=requireNotNull(ready);require(token == currentSession)
+                val folder=File(File(activity.cacheDir,"share"),java.util.UUID.randomUUID().toString()).apply{mkdirs()}
+                val file=File(folder,readyName);source.copyTo(file)
+                val mime=readyMime
+                source.delete();ready=null;saving=false
+                main.post {
+                    if (!closed && token == currentSession && activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                        try {
+                            val uri=FileProvider.getUriForFile(activity,"${activity.packageName}.files",file)
+                            activity.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                type=mime;putExtra(Intent.EXTRA_STREAM,uri);clipData=android.content.ClipData.newRawUri("export",uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            },"分享导出文件"))
+                        }catch(_:Exception){status("无法打开分享；请重新导出并选择保存")}
+                    }
+                }
+            }catch(_:Exception){discard();main.post{status("分享准备失败；官网数据保留")}}
+        }
+    }
+    fun resume() { enqueue {if(awaitingChoice && ready != null){val token=currentSession;main.post{offer(token)}}} }
+    fun close() {
+        if (closed)return
+        currentSession="";timeout?.let(main::removeCallbacks);offerDialog?.dismiss()
+        io.execute {clearTransfer();ready?.delete()};closed=true;io.shutdown()
+    }
 }

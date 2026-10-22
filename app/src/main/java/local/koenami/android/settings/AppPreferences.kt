@@ -10,7 +10,4 @@ class AppPreferences(context: Context) {
     var safeMode: Boolean
         get() = storage.getBoolean("safe", false)
         set(value) { storage.edit().putBoolean("safe", value).apply() }
-    var interrupted: Boolean
-        get() = storage.getBoolean("interrupted", false)
-        set(value) { storage.edit().putBoolean("interrupted", value).apply() }
 }

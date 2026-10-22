@@ -27,11 +27,15 @@ import local.koenami.android.web.OriginPolicy
 import local.koenami.android.web.WebViewFactory
 import local.koenami.android.web.OfficialWebViewClient
 import local.koenami.android.settings.AppPreferences
+import local.koenami.android.bridge.TrustedMessageBridge
 import java.util.UUID
+import local.koenami.android.lifecycle.WebSessionCoordinator
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.button.MaterialButton
 
 class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
-    private lateinit var root: LinearLayout
+    private lateinit var root: FrameLayout
     private lateinit var message: TextView
     private lateinit var enhancement: EnhancementController
     private lateinit var microphone: MicrophonePermissionCoordinator
@@ -43,29 +47,38 @@ class MainActivity : AppCompatActivity() {
     private var session = ""
     private var committed = false
     private var safe = false
+    private var bridgeAvailable = false
     private val handler = Handler(Looper.getMainLooper())
-    private var stopTimeout: Runnable? = null
-    private fun status(value: String) { message.text = value }
+    private lateinit var webSession: WebSessionCoordinator
+    private fun status(value: String) {
+        message.text = value
+        if (foreground && listOf("失败", "不足", "不支持", "拒绝", "丢失", "未确认").any(value::contains))
+            Toast.makeText(this,value,Toast.LENGTH_LONG).show()
+    }
     private fun trusted() = foreground && committed && OriginPolicy.training(web.url)
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         preferences = AppPreferences(this)
         safe = preferences.safeMode
-        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(24, 24, 32)) }
-        val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        bar.addView(TextView(this).apply { text = "Koenami · 普通话"; setTextColor(Color.WHITE); textSize = 17f; setPadding(16, 12, 4, 12) }, LinearLayout.LayoutParams(0, -2, 1f))
-        bar.addView(Button(this).apply { text = "恢复 / 工具"; contentDescription = "应用恢复及验证工具"; setOnClickListener { menu() } })
-        root.addView(bar)
-        message = TextView(this).apply { textSize = 12f; setTextColor(Color.LTGRAY); setPadding(16, 0, 16, 6); text = "正在连接普通话官网…" }
-        root.addView(message); setContentView(root)
+        root = FrameLayout(this).apply { keepScreenOn = true; setBackgroundColor(MaterialColors.getColor(this,com.google.android.material.R.attr.colorSurface)) }
+        message = TextView(this).apply { textSize = 12f; setTextColor(MaterialColors.getColor(root,com.google.android.material.R.attr.colorOnSurfaceVariant)); setPadding(16, 0, 16, 6); text = "正在连接普通话官网…" }
+        setContentView(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets
         }
-        microphone = MicrophonePermissionCoordinator(this, ::trusted, { epoch }, ::status)
+        microphone = MicrophonePermissionCoordinator(this, ::trusted, { epoch }, ::status) { if (committed) web.evaluateJavascript("window.__koenamiAndroid?.permissionGranted()", null) }
         chooser = FileChooserCoordinator(this, { committed && OriginPolicy.training(web.url) }, { foreground })
         exports = ExportCoordinator(this, ::status)
         createWebView()
+        val menuSize = (48 * resources.displayMetrics.density).toInt()
+        root.addView(androidx.appcompat.widget.AppCompatImageButton(this).apply {
+            setImageResource(R.drawable.ic_more_vert)
+            imageTintList = android.content.res.ColorStateList.valueOf(MaterialColors.getColor(root,com.google.android.material.R.attr.colorOnSurface))
+            background = android.util.TypedValue().let { value -> theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless,value,true); androidx.appcompat.content.res.AppCompatResources.getDrawable(this@MainActivity,value.resourceId) }
+            contentDescription = "应用菜单：官网工具、界面模式及恢复"
+            setOnClickListener { menu() }
+        }, FrameLayout.LayoutParams(menuSize,menuSize,android.view.Gravity.TOP or android.view.Gravity.END))
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val insets = ViewCompat.getRootWindowInsets(root)
@@ -83,6 +96,10 @@ class MainActivity : AppCompatActivity() {
     private fun createWebView() {
         committed = false
         web = WebViewFactory.create(this)
+        val created = web
+        webSession = WebSessionCoordinator(created,handler,{ epoch },{ web === created },{
+            rebuild();status("未确认采集结束，已释放网页会话；本次保存需要核对")
+        },::status)
         web.webViewClient = OfficialWebViewClient(
             pageStarted = {
                 epoch++; committed = false; session = UUID.randomUUID().toString()
@@ -90,7 +107,10 @@ class MainActivity : AppCompatActivity() {
             },
             pageCommitted = { url ->
                 committed = OriginPolicy.training(url)
-                if (committed) { enhancement.bind(session); status("已连接普通话官网") }
+                if (committed) {
+                    enhancement.bind(session)
+                    status(if (safe) "纯网页安全模式" else if (bridgeAvailable) "已连接普通话官网" else "WebView 能力不足：请先更新 Android System WebView / Chrome，再重新打开官网")
+                }
             },
             pageFinished = { url -> if (committed && OriginPolicy.training(url)) enhancement.bind(session) },
             external = ::openExternal, status = ::status,
@@ -116,21 +136,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
         enhancement = EnhancementController(web).apply { this.safe = this@MainActivity.safe; optimized = preferences.optimized }
-        if (!safe && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
-            WebViewCompat.addWebMessageListener(web, "KoenamiFiles", setOf(OriginPolicy.ORIGIN)) { _, msg, origin, mainFrame, proxy ->
-                if (mainFrame && committed && OriginPolicy.training(web.url) && OriginPolicy.officialOrigin(origin.toString())) {
-                    val data = msg.data
-                    if (data != null && data.length <= 68000) exports.receive(data, session) { response -> proxy.postMessage(response) }
-                }
-            }
+        bridgeAvailable = !safe && TrustedMessageBridge(web, { committed && OriginPolicy.training(web.url) }, { session }, exports::receive).register()
+        if (bridgeAvailable) {
             enhancement.register()
         } else status("纯网页模式或 WebMessage 不支持：本地文件导出适配不可用")
         web.setDownloadListener { _, _, _, _, _ -> status("此下载未被安全文件适配接管；请保留录音并检查兼容性") }
-        root.addView(web, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(web, 0, FrameLayout.LayoutParams(-1, -1))
         web.loadUrl(OriginPolicy.HOME)
     }
     private fun rebuild() {
-        stopTimeout?.let(handler::removeCallbacks); stopTimeout = null
+        webSession.cancel()
         microphone.invalidate(); chooser.cancel(); exports.setSession("")
         enhancement.dispose(); root.removeView(web); web.destroy(); createWebView()
     }
@@ -141,21 +156,42 @@ class MainActivity : AppCompatActivity() {
     private fun menu() {
         AlertDialog.Builder(this).setTitle("应用设置 / 恢复").setItems(arrayOf(
             "原始官方界面（保留文件适配）", "Android 优化界面", "纯网页安全模式 / 恢复系统适配", "重新打开普通话官网",
-            "兼容性诊断", "在系统浏览器打开官网", "隐私、备份与限制"
+            "兼容性诊断", "在系统浏览器打开官网", "隐私、备份与限制", "开源许可与署名", "更新 Android System WebView", "官网设置与工具"
         )) { _, which -> when (which) {
             0 -> { preferences.optimized = false; enhancement.setVisual(false); status("原始官方界面；系统适配保留") }
             1 -> { if (safe) status("请先恢复系统适配") else { preferences.optimized = true; enhancement.setVisual(true); status("Android 优化界面") } }
-            2 -> { safe = !safe; preferences.safeMode = safe; rebuild() }
-            3 -> { web.loadUrl(OriginPolicy.HOME) }
+            2 -> stopBefore { safe = !safe; preferences.safeMode = safe; rebuild() }
+            3 -> stopBefore { web.loadUrl(OriginPolicy.HOME) }
             4 -> diagnostics()
             5 -> openExternal(OriginPolicy.HOME)
-            6 -> AlertDialog.Builder(this).setTitle("非官方个人验证客户端").setMessage("训练内容、Worker/WASM、API 与官网原有统计由官网提供。应用不新增统计。实时模式不新增历史。普通录音后台保存尚在验证。卸载或清除数据会丢失本地历史；官网 ZIP 并非完整数据库恢复包。PoC 数据与正式包隔离。不要将本原型作为唯一音频副本。").setPositiveButton("知道了", null).show()
+            6 -> AlertDialog.Builder(this).setTitle("非官方开源客户端").setMessage("训练内容、Worker/WASM、API 与官网原有统计由官网提供。应用不新增统计。实时模式不新增历史。进入后台请求官网停止普通录音并保存；未提交录音遇到异常终止可能丢失。卸载或清除数据会丢失本地历史；官网 ZIP 并非完整数据库恢复包。PoC 数据与正式包隔离。不要将本原型作为唯一音频副本。").setPositiveButton("知道了", null).show()
+            7 -> licenses()
+            8 -> openExternal("https://play.google.com/store/apps/details?id=com.google.android.webview")
+            9 -> web.evaluateJavascript("(()=>{const b=document.getElementById('koenami-android-tools');if(b)b.click();window.scrollTo(0,0)})()",null)
         } }.show()
+    }
+    private fun licenses() {
+        val body = assets.open("THIRD_PARTY_NOTICES.txt").bufferedReader().use { it.readText() }
+        val text = TextView(this).apply { this.text = body; textSize = 13f; setPadding(24,16,24,16); setTextIsSelectable(true) }
+        AlertDialog.Builder(this).setTitle("Koenami ${BuildConfig.VERSION_NAME} · 开源许可").setView(ScrollView(this).apply { addView(text) }).setPositiveButton("关闭",null).show()
     }
     private fun diagnostics() {
         val provider = WebViewCompat.getCurrentWebViewPackage(this)
         web.evaluateJavascript("JSON.stringify(window.__koenamiAndroid?.diagnostics() || {safe:true})") { value ->
-            AlertDialog.Builder(this).setTitle("本地兼容性诊断").setMessage("Android ${android.os.Build.VERSION.RELEASE} / API ${android.os.Build.VERSION.SDK_INT}\n${provider?.packageName} ${provider?.versionName}\n主文档受信任：${OriginPolicy.training(web.url)}\n适配器：0.0.1-m0\n$value\n最近暂存文件 SHA-256：${exports.lastDigest}\n能力存在不等于音频测试通过").setPositiveButton("关闭", null).show()
+            AlertDialog.Builder(this).setTitle("本地兼容性诊断").setMessage("Android ${android.os.Build.VERSION.RELEASE} / API ${android.os.Build.VERSION.SDK_INT}\n${provider?.packageName} ${provider?.versionName}\n${message.text}\n主文档受信任：${OriginPolicy.training(web.url)}\n适配器：1.0\n$value\n最近暂存文件 SHA-256：${exports.lastDigest}\n能力存在不等于音频测试通过").setPositiveButton("关闭", null).show()
+        }
+    }
+    private fun stopBefore(action: () -> Unit) {
+        if (safe || !committed) { action();return }
+        web.evaluateJavascript("JSON.stringify(window.__koenamiAndroid?.captureState() || {unknown:true})") { value ->
+            val active=try {
+                val state=org.json.JSONObject(org.json.JSONTokener(value).nextValue() as String)
+                listOf("record","live","starting","unknown").any{state.optBoolean(it)}
+            }catch(_:Exception){true}
+            if(active) AlertDialog.Builder(this).setMessage("此操作将结束当前采集并重载页面。是否继续？保存结果需在历史中核对。")
+                .setPositiveButton("结束并继续"){_,_->requestStop();handler.postDelayed({if(!isFinishing)action()},4000)}
+                .setNegativeButton("取消",null).show()
+            else action()
         }
     }
     private fun exitPrompt() {
@@ -164,31 +200,14 @@ class MainActivity : AppCompatActivity() {
         }.setNegativeButton("继续使用", null).show()
     }
     private fun requestStop() {
-        if (safe || !committed) { if (!foreground) { rebuild(); status("安全模式离开前台，网页会话已重建；未提交录音可能丢失") }; return }
-        val stoppingWeb = web
-        val stoppingEpoch = epoch
-        web.evaluateJavascript("window.__koenamiAndroid?.stopCapture()", null)
-        stopTimeout?.let(handler::removeCallbacks)
-        stopTimeout = Runnable {
-            if (web !== stoppingWeb || epoch != stoppingEpoch) return@Runnable
-            var responded = false
-            handler.postDelayed({
-                if (!responded && web === stoppingWeb && epoch == stoppingEpoch) {
-                    rebuild(); status("网页未响应停止核查，已释放会话；本次未确认保存")
-                }
-            }, 1000)
-            web.evaluateJavascript("JSON.stringify(window.__koenamiAndroid?.captureState() || {unknown:true})") { result ->
-                responded = true
-                if (result.contains("true")) { rebuild(); status("未确认采集结束，已释放网页会话；本次未确认保存") }
-                else status("已请求官网停止；请在历史中确认是否保存（实时模式不新增历史）")
-            }
-        }
-        handler.postDelayed(stopTimeout!!, 2500)
+        if (isFinishing || isDestroyed) return
+        webSession.stop(!safe && committed)
     }
     override fun onResume() {
         super.onResume(); foreground = true
         if (::web.isInitialized) {
             web.onResume()
+            exports.resume()
             if (committed && !safe) web.evaluateJavascript("window.__koenamiAndroid?.foreground()", null)
         }
     }
@@ -204,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
     }
     override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null); microphone.invalidate(); chooser.cancel()
+        webSession.cancel(); handler.removeCallbacksAndMessages(null); microphone.invalidate(); chooser.cancel()
         enhancement.dispose(); root.removeView(web); web.destroy(); exports.close(); super.onDestroy()
     }
 }
