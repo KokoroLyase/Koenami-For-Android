@@ -1,11 +1,18 @@
 {
-  "adapterVersion": "0.0.1-m0",
-  "stage": "M0 prototype, not production UI",
   "auditedSourceSha": "870b7282122e8c290955f17a32898ccb74ee6fcb",
-  "origin": "https://koe.transnavi.jp",
-  "paths": ["/zh-CN/", "/zh-CN"],
-  "scripts": ["bootstrap.js"],
-  "requiredIds": ["record", "live-mode", "voice-map", "signal-canvas"],
+  "styles": [],
+  "adapterVersion": "1.0",
+  "paths": [
+    "/zh-CN/",
+    "/zh-CN"
+  ],
+  "scripts": [
+    "dom-adapter.js",
+    "lifecycle.js",
+    "interop/runtime.js",
+    "bootstrap.js"
+  ],
   "fileChunkBytes": 49152,
-  "fileLimitBytes": 536870912
+  "fileLimitBytes": 536870912,
+  "origin": "https://koe.transnavi.jp"
 }
