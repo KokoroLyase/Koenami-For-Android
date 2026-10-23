@@ -27,6 +27,6 @@ Release 必须具备唯一的通用 `.apk` 资产、正整数大小（最多 150
 
 每次保持原发布密钥，递增 versionCode，使用数字版本标签（如 `v1.1`），上传唯一通用 APK。发布顺序应先上传资产，再将草稿公开为正式 Release；确保 API 中 APK 的 `state=uploaded` 且 `digest=sha256:…`。继续附带 `SHA256SUMS.txt` 和公开签名证书供人工核验。预发布版不会被该更新器选中。
 
-默认保留手机审核后才公开发布的流程；1.1 依据用户明确授权，在开发测试通过后直接发布，不宣称已完成该版本真机验证。新增运行时 AndroidX WorkManager 依赖的 Apache 2.0 声明已纳入应用内和仓库的完整第三方声明。
+默认保留手机审核后才公开发布的流程；1.1 依据用户明确授权，在开发测试通过后直接发布，不宣称已完成该版本真机验证。1.2 已在手机验证并由用户确认定版和公开发布。新增运行时 AndroidX WorkManager 依赖的 Apache 2.0 声明已纳入应用内和仓库的完整第三方声明。
 
 参考：[GitHub latest Release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)、[Android 持久后台任务](https://developer.android.com/develop/background-work/background-tasks/persistent-work)、[通知权限](https://developer.android.com/develop/ui/views/notifications/notification-permission)、[应用安装来源授权](https://developer.android.com/reference/android/content/pm/PackageManager#canRequestPackageInstalls())。

@@ -6,13 +6,14 @@
 
 ## 安装与使用
 
-从 [最新正式 Release](https://github.com/KokoroLyase/Koenami-For-Android/releases/latest) 下载 `Koenami-v1.1.apk`；同页提供 SHA-256 和公开签名证书。安装后名称为 **Koenami**。v1.0 用户首次需要手动覆盖安装 v1.1，此后可在应用内检查更新。
+从 [最新正式 Release](https://github.com/KokoroLyase/Koenami-For-Android/releases/latest) 下载 `Koenami-v1.2.apk`；同页提供 SHA-256 和公开签名证书。安装后名称为 **Koenami**。v1.0 用户首次需要手动覆盖安装新版；v1.1 起可在应用内检查更新，无需卸载。
 
 - Android 10 / API 29 起，需要联网和近期版本的 Android System WebView / Chrome。已验证 WebView 155；Android 10 镜像内置 74 版无法运行当前官网，须更新。
 - 麦克风按钮进行普通录音，结束后在历史中播放和导出；“实时”仅实时测量，不新增录音历史。
-- 右上角菜单提供原始界面、优化界面、纯网页安全模式、官网工具、隐私和开源许可。
+- 右上角菜单提供检查更新、地图全屏、原始界面、优化界面、纯网页安全模式、隐私和开源许可。官网设置与工具常驻顶部窄工具栏。
 - 三点菜单新增“检查更新”和默认每日自动检查，来自本仓库的最新正式 GitHub Release；下载和安装均需用户确认。在“应用更新设置”可关闭检查、开启后台通知，详见 [更新机制](docs/UPDATES.md)。
-- 五项声音参数默认完整展示；地图支持全屏；分析入口固定在录音栏上方。
+- 五项声音参数及差异值完整展示；波形 / 音高分析图默认展开，支持收起与全屏；底部录音与播放控件采用紧凑布局。
+- 地图左上角依次为 2D / 3D、主成分、男女差异三行按钮。投影按钮始终可见，点击后切到对应 2D 视图，图例自动避让。
 - 导出使用系统保存或分享面板，导入使用系统文件选择器，不申请存储权限。
 
 进入后台或锁屏会请求官网结束采集；已提交历史在本机保留，异常终止前尚未提交的采集可能丢失。**卸载或清除应用数据会删除历史；官网 ZIP 不是完整数据库恢复备份。** 请定期导出重要音频。
@@ -35,7 +36,7 @@ JDK 17、Android SDK Platform 37.0、Build Tools 36.0.0；Gradle Wrapper 9.4.1�
 
 Linux/macOS 使用 `./gradlew`。配置 `ANDROID_HOME` 或本机 `local.properties`，首次构建需要下载依赖。开发包名为 `local.koenami.android.debug`，使用开发者本机 Debug 证书。
 
-签名、升级和密钥保管见 [构建与发布](docs/BUILDING.md)，版本变更见 [CHANGELOG](CHANGELOG.md)。
+签名、升级和密钥保管见 [构建与发布](docs/BUILDING.md)，版本变更见 [CHANGELOG](CHANGELOG.md)，当前发行验证见 [v1.2 发布记录](docs/RELEASE-1.2.md)。
 
 ## 许可、署名与版权
 
