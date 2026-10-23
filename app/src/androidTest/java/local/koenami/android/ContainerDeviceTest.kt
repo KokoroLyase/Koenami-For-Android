@@ -58,6 +58,26 @@ class ContainerDeviceTest {
         assertEquals("true",js("(()=>{window.__koenamiAndroid.visual(false);return !document.documentElement.hasAttribute('data-koenami-android')&&!!window.KoenamiFiles&&!!window.__koenamiAndroid.stopCapture;})()"))
         js("window.__koenamiAndroid.visual(true)")
     }
+    @Test fun analysisCanvasStartsVisibleAndSurvivesDisplayModes() {
+        val state=js("""
+            JSON.stringify((()=>{
+              const root=document.documentElement,canvas=document.querySelector('#signal-canvas'),record=document.querySelector('#record');
+              const visible=()=>{const r=canvas.getBoundingClientRect(),f=document.querySelector('.transport').getBoundingClientRect();return r.height>=64&&r.top>=0&&r.bottom<=f.top+1;};
+              const initial=root.hasAttribute('data-koenami-analysis-open')&&visible();
+              const toggle=document.querySelector('#koenami-android-analysis-header button');
+              toggle.click();const collapsed=!root.hasAttribute('data-koenami-analysis-open')&&canvas.getBoundingClientRect().height===0;
+              toggle.click();const reopened=visible();
+              document.querySelector('#koenami-android-analysis-header button:last-child').click();
+              const fullscreen=root.hasAttribute('data-koenami-analysis-full')&&visible();
+              const backed=window.__koenamiAndroid.back();
+              window.__koenamiAndroid.visual(false);const original=!root.hasAttribute('data-koenami-android')&&canvas===document.querySelector('#signal-canvas');
+              window.__koenamiAndroid.visual(true);
+              return {initial,collapsed,reopened,fullscreen,backed,original,sameNodes:canvas===document.querySelector('#signal-canvas')&&record===document.querySelector('#record')};
+            })())
+        """.trimIndent())
+        val result=JSONObject(JSONTokener(state).nextValue() as String)
+        for (key in listOf("initial","collapsed","reopened","fullscreen","backed","original","sameNodes")) assertTrue(key,result.getBoolean(key))
+    }
     @Test fun importedAudioSurvivesSignedUpgrade() {
         val verifyOnly = androidx.test.platform.app.InstrumentationRegistry.getArguments().getString("upgradeCheck") == "true"
         if (!verifyOnly) js("""

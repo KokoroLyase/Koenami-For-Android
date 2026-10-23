@@ -8,8 +8,8 @@ android {
         applicationId = "local.koenami.android"
         minSdk = 29
         targetSdk = 37
-        versionCode = providers.gradleProperty("overrideVersionCode").orNull?.toInt() ?: 10100
-        versionName = providers.gradleProperty("overrideVersionName").orNull ?: "1.1"
+        versionCode = providers.gradleProperty("overrideVersionCode").orNull?.toInt() ?: 10200
+        versionName = providers.gradleProperty("overrideVersionName").orNull ?: "1.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { buildConfig = true }

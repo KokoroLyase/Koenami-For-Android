@@ -1,5 +1,5 @@
 html[data-koenami-android][data-koenami-training],html[data-koenami-android][data-koenami-training] body{height:100%!important;min-height:0;overflow:hidden}
-html[data-koenami-android][data-koenami-training] .app{display:flex;flex-direction:column;box-sizing:border-box;height:100dvh!important;min-height:0;overflow:hidden;padding-bottom:calc(var(--koenami-transport-height) + var(--koenami-analysis-header-height,48px))}
+html[data-koenami-android][data-koenami-training] .app{display:flex;flex-direction:column;box-sizing:border-box;height:100dvh!important;min-height:0;overflow:hidden;padding-bottom:calc(var(--koenami-transport-height) + var(--koenami-analysis-height,32px))}
 html[data-koenami-android][data-koenami-training] .toolbar{flex-shrink:0;min-height:48px;height:auto;flex-wrap:wrap;padding:4px 12px;justify-content:flex-end}
 html[data-koenami-android][data-koenami-training]:not([data-koenami-tools]) .toolbar{display:none!important}
 html[data-koenami-android][data-koenami-training][data-koenami-tools] .toolbar{padding-right:60px}
@@ -38,15 +38,27 @@ html[data-koenami-android][data-koenami-training] .legend{top:auto;bottom:8px;le
 html[data-koenami-android][data-koenami-training] .legend>span{white-space:nowrap}
 html[data-koenami-android][data-koenami-training] #koenami-android-map-full{position:absolute;top:8px;right:8px;z-index:2;min-width:64px;min-height:36px;padding:4px 10px;font-size:12px;line-height:1.2;border-radius:10px;background:var(--surface)}
 html[data-koenami-android][data-koenami-training][data-koenami-map-full] #koenami-android-map-full{right:56px}
-html[data-koenami-android][data-koenami-training] .transport{position:fixed;bottom:0;left:0;right:0;z-index:30;min-height:128px;height:auto;padding:8px 10px;gap:8px;border-top:1px solid var(--line);grid-template-columns:minmax(150px,1fr) minmax(0,1fr)}
-html[data-koenami-android][data-koenami-training] #record{width:68px;height:68px;min-width:68px;min-height:68px;border-radius:50%}
-html[data-koenami-android][data-koenami-training] .recording-summary{min-width:0}
-html[data-koenami-android][data-koenami-training] #take-select{min-width:0;max-width:100%}
-html[data-koenami-android][data-koenami-training] #live-mode{min-height:48px}
-html[data-koenami-android][data-koenami-training] .speed-control{min-width:0}
-html[data-koenami-android][data-koenami-training] .speed-control input{min-width:32px;width:100%}
-html[data-koenami-android][data-koenami-training] .playback-controls{min-width:0;gap:4px}
-@media(max-width:360px){html[data-koenami-android][data-koenami-training] .playback-controls{grid-column:1/-1;grid-row:3;justify-content:flex-end}}
+html[data-koenami-android][data-koenami-training] .transport{position:fixed;bottom:0;left:0;right:0;z-index:30;box-sizing:border-box;min-height:0;height:auto;padding:5px 8px;gap:4px 6px;border-top:1px solid var(--line);grid-template-columns:minmax(118px,.85fr) minmax(0,1.15fr);grid-template-rows:auto auto;align-items:center}
+html[data-koenami-android][data-koenami-training] .transport :is(button,.icon-button,.upload-button){min-height:36px;min-width:36px;font-size:13px;padding:4px 6px}
+html[data-koenami-android][data-koenami-training] .primary-controls{grid-column:1;grid-row:1;gap:6px}
+html[data-koenami-android][data-koenami-training] #record{width:52px;height:52px;min-width:52px;min-height:52px;padding:10px;border-radius:50%}
+html[data-koenami-android][data-koenami-training] #record svg{width:26px;height:26px}
+html[data-koenami-android][data-koenami-training] #play-mine{min-height:36px;gap:4px;padding:4px 8px}
+html[data-koenami-android][data-koenami-training] .recording-summary{grid-column:2;grid-row:1;min-width:0;gap:6px}
+html[data-koenami-android][data-koenami-training] #take-select{min-width:0;max-width:100%;font-size:13px}
+html[data-koenami-android][data-koenami-training] #take-select::part(trigger){min-height:36px;font-size:13px;padding:5px 8px;border-radius:9px}
+html[data-koenami-android][data-koenami-training] .capture-status{min-width:0;font-size:13px}
+html[data-koenami-android][data-koenami-training] #timer{font-size:13px}
+html[data-koenami-android][data-koenami-training] .live-controls{grid-column:1;grid-row:2;gap:4px}
+html[data-koenami-android][data-koenami-training] #live-mode{min-height:36px;gap:5px;font-size:13px;padding:4px}
+html[data-koenami-android][data-koenami-training] .transport :is(.icon-button,.upload-button,.loopback-button){width:36px;height:36px;padding:6px}
+html[data-koenami-android][data-koenami-training] .transport :is(.icon-button,.upload-button,.loopback-button,#play-mine) svg{width:18px;height:18px}
+html[data-koenami-android][data-koenami-training] .speed-control{min-width:0;min-height:0;height:36px;padding:0;gap:2px}
+html[data-koenami-android][data-koenami-training] .speed-control input{appearance:none;min-width:28px;min-height:0;width:clamp(28px,9vw,44px);height:32px;margin:0;padding:0;border:0;background:transparent}
+html[data-koenami-android][data-koenami-training] .speed-control input::-webkit-slider-runnable-track{height:3px;border-radius:999px;background:var(--line)}
+html[data-koenami-android][data-koenami-training] .speed-control input::-webkit-slider-thumb{appearance:none;box-sizing:border-box;width:16px;height:16px;margin-top:-6.5px;border:3px solid var(--surface);border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+html[data-koenami-android][data-koenami-training] #speed-reset{min-width:32px;font-size:13px;padding:4px 2px}
+html[data-koenami-android][data-koenami-training] .playback-controls{grid-column:2;grid-row:2;min-width:0;gap:2px;justify-self:end;justify-content:flex-end}
 html[data-koenami-android][data-koenami-training][data-koenami-map-full] .graph-area{position:fixed;inset:0 0 var(--koenami-transport-height) 0;z-index:40;min-height:0;background:var(--bg)}
 html[data-koenami-android][data-koenami-training][data-koenami-map-full] .graph{height:100%;min-height:0}
 html[data-koenami-android][data-koenami-training][data-koenami-map-full]:not([data-koenami-analysis-full]) .graph-area{grid-template-rows:minmax(0,1fr)!important}

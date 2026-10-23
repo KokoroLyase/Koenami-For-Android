@@ -1,13 +1,20 @@
-html[data-koenami-android][data-koenami-analysis] .signal-panel{display:grid;grid-template-rows:48px minmax(80px,1fr) auto;min-height:0;height:min(270px,calc(100dvh - var(--koenami-transport-height) - var(--koenami-analysis-header-height,48px)));overflow:visible;border:0;border-radius:0}
-html[data-koenami-android][data-koenami-analysis] #koenami-android-analysis-header{position:fixed;left:0;right:0;bottom:var(--koenami-transport-height);z-index:31;display:flex;gap:8px;align-items:center;justify-content:space-between;min-height:48px;box-sizing:border-box;padding:0 10px;border-top:1px solid var(--line);background:var(--surface)}
-html[data-koenami-android][data-koenami-analysis] #koenami-android-analysis-header button{border:0;background:transparent;color:var(--accent);font-weight:600;min-height:48px}
-html[data-koenami-android][data-koenami-analysis]:not([data-koenami-analysis-open]) .signal-panel{height:0;grid-template-rows:0}
+html[data-koenami-android][data-koenami-analysis] .signal-panel{position:fixed;left:0;right:0;bottom:var(--koenami-transport-height);z-index:31;display:grid;grid-template-rows:32px 36px minmax(64px,1fr) auto;box-sizing:border-box;min-height:0;height:calc(clamp(144px,19dvh,176px) + var(--koenami-word-height,0px));gap:0;padding:0;overflow:hidden;border:0;border-top:1px solid var(--line);border-radius:0;background:var(--surface)}
+html[data-koenami-android][data-koenami-analysis] .signal-panel:has(#word-list:not(:empty)){--koenami-word-height:48px}
+html[data-koenami-android][data-koenami-analysis] #koenami-android-analysis-header{display:flex;gap:8px;align-items:center;justify-content:space-between;min-height:32px;box-sizing:border-box;padding:0 8px;background:var(--surface)}
+html[data-koenami-android][data-koenami-analysis] #koenami-android-analysis-header button{border:0;background:transparent;color:var(--accent);font-size:13px;font-weight:600;min-height:32px;padding:2px 4px}
+html[data-koenami-android][data-koenami-analysis]:not([data-koenami-analysis-open]) .signal-panel{height:33px;grid-template-rows:32px}
 html[data-koenami-android][data-koenami-analysis]:not([data-koenami-analysis-open]) .signal-panel>:not(#koenami-android-analysis-header){display:none!important}
-html[data-koenami-android][data-koenami-analysis] .signal-toolbar{gap:4px;overflow-x:auto;font-size:14px;min-height:48px}
-html[data-koenami-android][data-koenami-analysis] .signal-toolbar :is(button,koe-select){flex-shrink:0;min-height:44px;font-size:14px}
+html[data-koenami-android][data-koenami-analysis] .signal-toolbar{gap:4px;padding:0 8px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;font-size:12px;min-height:36px;min-width:0}
+html[data-koenami-android][data-koenami-analysis] .signal-toolbar :is(button,koe-select){flex-shrink:0;min-height:32px;min-width:32px;font-size:12px;padding:2px 5px}
+html[data-koenami-android][data-koenami-analysis] #signal-view{padding:0}
+html[data-koenami-android][data-koenami-analysis] #signal-view::part(trigger){min-height:32px;font-size:12px;padding:4px 6px}
+html[data-koenami-android][data-koenami-analysis] .signal-toolbar .range-selection{flex-shrink:0;font-size:12px}
+html[data-koenami-android][data-koenami-analysis] #signal-canvas{display:block;width:100%;height:100%;min-height:0}
+html[data-koenami-android][data-koenami-analysis] #word-list:empty{display:none}
+html[data-koenami-android][data-koenami-analysis] #word-list{max-height:48px;overflow-y:auto}
 html[data-koenami-android][data-koenami-analysis][data-koenami-analysis-full] .graph-area{position:fixed;inset:0 0 var(--koenami-transport-height) 0;z-index:40;display:block;min-height:0;background:var(--bg)}
 html[data-koenami-android][data-koenami-analysis][data-koenami-analysis-full] .graph{display:none}
-html[data-koenami-android][data-koenami-analysis][data-koenami-analysis-full] .signal-panel{height:100%;min-height:0}
-html[data-koenami-android][data-koenami-analysis][data-koenami-analysis-full] .signal-panel{grid-template-rows:auto 48px minmax(0,1fr) auto}
+html[data-koenami-android][data-koenami-analysis][data-koenami-analysis-full] .signal-panel{position:static;height:100%;min-height:0;grid-template-rows:32px 36px minmax(0,1fr) auto}
 html[data-koenami-android][data-koenami-analysis][data-koenami-analysis-full] #koenami-android-analysis-header{position:static;padding-right:56px}
 html[data-koenami-android][data-koenami-analysis][data-koenami-map-full]:not([data-koenami-analysis-full]) #koenami-android-analysis-header{display:none}
+@media(orientation:landscape) and (max-height:480px){html[data-koenami-android][data-koenami-analysis]:not([data-koenami-analysis-full]) .signal-panel{height:calc(136px + var(--koenami-word-height,0px))}html[data-koenami-android][data-koenami-analysis]:not([data-koenami-analysis-open]) .signal-panel{height:33px}}
