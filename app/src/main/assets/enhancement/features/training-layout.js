@@ -17,6 +17,11 @@
     mount(){
       attr('training',true);
       attr('tools',true);
+      // Projection choices stay visible in 3D; activate the official 2D mode before its projection handler.
+      for(const choice of document.querySelectorAll('#projection-controls button')){
+        const select2D=()=>{if(document.querySelector('#projection-controls').hidden)document.querySelector('[data-dimension="2"]').click();};
+        choice.addEventListener('click',select2D,true);listeners.push([choice,select2D,true]);
+      }
       const expand=button('reference','展开文本',a.one('reference').parentElement,b=>{
         const on=!root.hasAttribute('data-koenami-reference-open');attr('reference-open',on);b.setAttribute('aria-expanded',String(on));b.textContent=on?'收起文本':'展开文本';
       });expand.setAttribute('aria-expanded','false');
@@ -44,7 +49,7 @@
       schedule();
     },
     back:leave,
-    unmount(){leave();resize?.disconnect();cancelAnimationFrame(frame);for(const [b,l] of listeners)b.removeEventListener('click',l);listeners=[];nodes.forEach(n=>n.remove());nodes=[];
+    unmount(){leave();resize?.disconnect();cancelAnimationFrame(frame);for(const [b,l,capture] of listeners)b.removeEventListener('click',l,capture);listeners=[];nodes.forEach(n=>n.remove());nodes=[];
       for(const name of ['training','tools','reference-open','map-full','map-controls-wrap'])attr(name,false);
       for(const name of ['--koenami-transport-height','--koenami-map-height','--koenami-map-legend-top'])root.style.removeProperty(name);}
   });

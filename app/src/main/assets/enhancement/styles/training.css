@@ -16,6 +16,12 @@ html[data-koenami-android][data-koenami-training] #selected-text{grid-column:1;g
 html[data-koenami-android][data-koenami-training] .graph-area{grid-row:3;display:grid;grid-template-rows:var(--koenami-map-height,320px) auto!important;padding:0;min-height:0;gap:0}
 html[data-koenami-android][data-koenami-training] .graph{position:relative;height:var(--koenami-map-height,320px);min-height:0;padding:0;overflow:hidden}
 html[data-koenami-android][data-koenami-training] #voice-map{width:100%;height:100%;touch-action:none}
+html[data-koenami-android][data-koenami-training] .graph-toolbar{display:grid;grid-template-columns:repeat(2,max-content);gap:4px}
+html[data-koenami-android][data-koenami-training] .graph-toolbar [data-dimension="2"]{margin-right:0}
+html[data-koenami-android][data-koenami-training] #projection-controls{display:contents!important}
+html[data-koenami-android][data-koenami-training] [data-projection="variance"]{grid-column:1/-1;grid-row:2;justify-self:start}
+html[data-koenami-android][data-koenami-training] [data-projection="contrast"]{grid-column:1/-1;grid-row:3;justify-self:start}
+html[data-koenami-android][data-koenami-training] #auto-rotate{grid-column:1/-1;grid-row:4;justify-self:start}
 html[data-koenami-android][data-koenami-training][data-koenami-map-controls-wrap] .graph .legend{top:var(--koenami-map-legend-top)}
 html[data-koenami-android][data-koenami-training] #koenami-android-map-full{display:none;position:absolute;top:8px;right:8px;z-index:2;min-width:64px;min-height:36px;padding:4px 10px;font-size:12px;line-height:1.2;border-radius:10px;background:var(--surface)}
 html[data-koenami-android][data-koenami-training][data-koenami-map-full] #koenami-android-map-full{right:56px}
