@@ -8,8 +8,8 @@ android {
         applicationId = "local.koenami.android"
         minSdk = 29
         targetSdk = 37
-        versionCode = providers.gradleProperty("overrideVersionCode").orNull?.toInt() ?: 10000
-        versionName = providers.gradleProperty("overrideVersionName").orNull ?: "1.0"
+        versionCode = providers.gradleProperty("overrideVersionCode").orNull?.toInt() ?: 10100
+        versionName = providers.gradleProperty("overrideVersionName").orNull ?: "1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { buildConfig = true }
@@ -39,15 +39,13 @@ android {
 androidComponents { beforeVariants(selector().withBuildType("release")) {
     it.enable = providers.gradleProperty("enableRelease").orNull == "true"
 }
-    onVariants(selector().withBuildType("debug")) { variant ->
-        variant.outputs.forEach { it.versionCode.set(10000) }
-    }
 }
 dependencies {
     implementation(libs.webkit)
     implementation(libs.activity)
     implementation(libs.appcompat)
     implementation(libs.material)
+    implementation(libs.work)
     testImplementation(libs.junit)
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.core)

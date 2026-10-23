@@ -99,6 +99,15 @@
     ]
   },
   {
+    "coordinate": "androidx.concurrent:concurrent-futures-ktx:1.1.0",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
     "coordinate": "androidx.concurrent:concurrent-futures:1.1.0",
     "licenses": [
       {
@@ -297,6 +306,15 @@
     ]
   },
   {
+    "coordinate": "androidx.lifecycle:lifecycle-livedata:2.6.2",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
     "coordinate": "androidx.lifecycle:lifecycle-process:2.6.2",
     "licenses": [
       {
@@ -316,6 +334,15 @@
   },
   {
     "coordinate": "androidx.lifecycle:lifecycle-runtime:2.6.2",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "coordinate": "androidx.lifecycle:lifecycle-service:2.6.2",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -414,6 +441,24 @@
     ]
   },
   {
+    "coordinate": "androidx.room:room-common-jvm:2.7.0",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "coordinate": "androidx.room:room-runtime-android:2.7.0",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
     "coordinate": "androidx.savedstate:savedstate-ktx:1.2.1",
     "licenses": [
       {
@@ -432,7 +477,34 @@
     ]
   },
   {
+    "coordinate": "androidx.sqlite:sqlite-android:2.5.0",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "coordinate": "androidx.sqlite:sqlite-framework-android:2.5.0",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
     "coordinate": "androidx.startup:startup-runtime:1.1.1",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "coordinate": "androidx.tracing:tracing-ktx:1.2.0",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",
@@ -505,6 +577,15 @@
   },
   {
     "coordinate": "androidx.webkit:webkit:1.17.1",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  },
+  {
+    "coordinate": "androidx.work:work-runtime:2.12.0",
     "licenses": [
       {
         "name": "The Apache Software License, Version 2.0",

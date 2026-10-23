@@ -32,6 +32,7 @@ import java.util.UUID
 import local.koenami.android.lifecycle.WebSessionCoordinator
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.button.MaterialButton
+import local.koenami.android.updates.UpdateController
 
 class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
@@ -42,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var chooser: FileChooserCoordinator
     private lateinit var exports: ExportCoordinator
     private lateinit var preferences: AppPreferences
+    private lateinit var updates: UpdateController
     private var foreground = false
     private var epoch = 0
     private var session = ""
@@ -71,12 +73,13 @@ class MainActivity : AppCompatActivity() {
         chooser = FileChooserCoordinator(this, { committed && OriginPolicy.training(web.url) }, { foreground })
         exports = ExportCoordinator(this, ::status)
         createWebView()
+        updates = UpdateController(this, ::whenIdle, ::stopBefore)
         val menuSize = (48 * resources.displayMetrics.density).toInt()
         root.addView(androidx.appcompat.widget.AppCompatImageButton(this).apply {
             setImageResource(R.drawable.ic_more_vert)
             imageTintList = android.content.res.ColorStateList.valueOf(MaterialColors.getColor(root,com.google.android.material.R.attr.colorOnSurface))
             background = android.util.TypedValue().let { value -> theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless,value,true); androidx.appcompat.content.res.AppCompatResources.getDrawable(this@MainActivity,value.resourceId) }
-            contentDescription = "应用菜单：官网工具、界面模式及恢复"
+            contentDescription = "应用菜单：检查更新、官网工具、界面模式及恢复"
             setOnClickListener { menu() }
         }, FrameLayout.LayoutParams(menuSize,menuSize,android.view.Gravity.TOP or android.view.Gravity.END))
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -155,9 +158,10 @@ class MainActivity : AppCompatActivity() {
     }
     private fun menu() {
         AlertDialog.Builder(this).setTitle("应用设置 / 恢复").setItems(arrayOf(
+            "检查更新", "应用更新设置（每天自动检查）",
             "原始官方界面（保留文件适配）", "Android 优化界面", "纯网页安全模式 / 恢复系统适配", "重新打开普通话官网",
             "兼容性诊断", "在系统浏览器打开官网", "隐私、备份与限制", "开源许可与署名", "更新 Android System WebView", "官网设置与工具"
-        )) { _, which -> when (which) {
+        )) { _, which -> when (which - 2) {
             0 -> { preferences.optimized = false; enhancement.setVisual(false); status("原始官方界面；系统适配保留") }
             1 -> { if (safe) status("请先恢复系统适配") else { preferences.optimized = true; enhancement.setVisual(true); status("Android 优化界面") } }
             2 -> stopBefore { safe = !safe; preferences.safeMode = safe; rebuild() }
@@ -168,6 +172,8 @@ class MainActivity : AppCompatActivity() {
             7 -> licenses()
             8 -> openExternal("https://play.google.com/store/apps/details?id=com.google.android.webview")
             9 -> web.evaluateJavascript("(()=>{const b=document.getElementById('koenami-android-tools');if(b)b.click();window.scrollTo(0,0)})()",null)
+            -2 -> updates.manual()
+            -1 -> updates.settings()
         } }.show()
     }
     private fun licenses() {
@@ -188,10 +194,21 @@ class MainActivity : AppCompatActivity() {
                 val state=org.json.JSONObject(org.json.JSONTokener(value).nextValue() as String)
                 listOf("record","live","starting","unknown").any{state.optBoolean(it)}
             }catch(_:Exception){true}
-            if(active) AlertDialog.Builder(this).setMessage("此操作将结束当前采集并重载页面。是否继续？保存结果需在历史中核对。")
+            if(active) AlertDialog.Builder(this).setMessage("此操作将结束当前采集。是否继续？保存结果需在历史中核对。")
                 .setPositiveButton("结束并继续"){_,_->requestStop();handler.postDelayed({if(!isFinishing)action()},4000)}
                 .setNegativeButton("取消",null).show()
             else action()
+        }
+    }
+    private fun whenIdle(callback: (Boolean) -> Unit) {
+        if (!foreground || microphone.promptInFlight || !hasWindowFocus()) { callback(false); return }
+        if (safe || !committed) { callback(true); return }
+        web.evaluateJavascript("JSON.stringify(window.__koenamiAndroid?.captureState() || {unknown:true})") { value ->
+            val active = try {
+                val state = org.json.JSONObject(org.json.JSONTokener(value).nextValue() as String)
+                listOf("record", "live", "starting", "unknown", "settling").any { state.optBoolean(it) }
+            } catch (_: Exception) { true }
+            callback(foreground && !active && hasWindowFocus())
         }
     }
     private fun exitPrompt() {
@@ -205,6 +222,7 @@ class MainActivity : AppCompatActivity() {
     }
     override fun onResume() {
         super.onResume(); foreground = true
+        if (::updates.isInitialized) updates.resume()
         if (::web.isInitialized) {
             web.onResume()
             exports.resume()
@@ -212,6 +230,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     override fun onPause() {
+        if (::updates.isInitialized) updates.pause()
         // The system permission overlay pauses this activity without putting it in background.
         // Actual background during that overlay is handled by onStop and invalidates the request.
         if (!microphone.promptInFlight) { foreground = false; microphone.invalidate(); requestStop() }
@@ -223,6 +242,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
     }
     override fun onDestroy() {
+        if (::updates.isInitialized) updates.close()
         webSession.cancel(); handler.removeCallbacksAndMessages(null); microphone.invalidate(); chooser.cancel()
         enhancement.dispose(); root.removeView(web); web.destroy(); exports.close(); super.onDestroy()
     }

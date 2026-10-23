@@ -6,10 +6,14 @@
 
 | 权限 | 用途 |
 |---|---|
-| INTERNET | 官网、资源、参考音频及官网 API |
-| ACCESS_NETWORK_STATE | 网络状态能力 |
+| INTERNET | 官网、资源、参考音频、官网 API，以及 GitHub Release 检查和用户确认的 APK 下载 |
+| ACCESS_NETWORK_STATE | 网络状态及联网后执行更新检查 |
 | RECORD_AUDIO | 用户操作及系统授权后由 WebView 使用麦克风 |
 | MODIFY_AUDIO_SETTINGS | 满足 Chromium 音频设备选择；客户端不强制指定设备 |
+| POST_NOTIFICATIONS | Android 13 起由用户允许，后台发现新版本时通知；拒绝后仍可前台提示 |
+| REQUEST_INSTALL_PACKAGES | 用户选择更新后请求系统安装 APK；需系统“允许此来源”授权，不能静默安装 |
+| WAKE_LOCK | AndroidX WorkManager 执行短时后台检查所需 |
+| RECEIVE_BOOT_COMPLETED | AndroidX WorkManager 在重启后恢复每日任务 |
 
 音频设置权限经真机 A/B 验证后加入：缺少时 Chromium 报 `Unable to select communication device`，增加后普通录音恢复。不申请摄像头、定位或广泛存储权限。麦克风授权校验受信任来源、前台状态和当前会话，摄像头、定位及未知资源被拒绝。
 
@@ -20,3 +24,7 @@
 进入后台请求官网停止采集，保存结果请在历史中确认；异常终止、权限撤回或进程回收可能丢失未提交采集。重要音频应定期导出到应用之外。
 
 公开仓库不收集用户录音、原始截图、系统日志、设备标识或密钥。提交 Issue 前请去除个人信息；兼容性诊断仅在本机显示，不自动上报。
+
+每日更新检查访问 GitHub 公共 API，无需登录或 Token；GitHub 会接收常规网络信息（IP、客户端版本 User-Agent）。更新请求不包含声音、历史、设备标识或诊断日志。用户确认后通过 GitHub 及其资产 CDN 下载 APK。检查时间、自动检查开关、待提示版本和稍后提醒时间仅保存在本机；可在“应用更新设置”关闭自动检查。通知权限通过该设置页自愿开启，未允许时下次打开应用提示。
+
+更新文件位于私有 `cache/updates/`，校验后仅向系统安装器临时授权读取；取消 / 失败的临时下载立即删除，遗留缓存下次启动时清理超过 24 小时的文件。不会自动卸载旧版，也不访问官网数据库；用户不确认就不下载、不安装。详见 [更新机制](UPDATES.md)。

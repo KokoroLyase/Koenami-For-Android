@@ -2,15 +2,16 @@
 
 <img src="app/src/main/res/drawable-nodpi/koenami_icon.png" width="96" alt="Koenami 图标">
 
-**Koenami v1.0** 是由 Isomeria 维护的非官方 Android 客户端。使用 WebView 打开 [Koenami 普通话官网](https://koe.transnavi.jp/zh-CN/)，改善手机布局、文件操作及会话管理。与 Koenami 官方无隶属或背书关系。
+**Koenami** 是由 Isomeria 维护的非官方 Android 客户端。使用 WebView 打开 [Koenami 普通话官网](https://koe.transnavi.jp/zh-CN/)，改善手机布局、文件操作及会话管理。与 Koenami 官方无隶属或背书关系。
 
 ## 安装与使用
 
-从 [v1.0 Release](https://github.com/KokoroLyase/Koenami-For-Android/releases/tag/v1.0) 下载 `Koenami-v1.0.apk`；同页提供 SHA-256 和公开签名证书。安装后名称为 **Koenami**。
+从 [最新正式 Release](https://github.com/KokoroLyase/Koenami-For-Android/releases/latest) 下载 `Koenami-v1.1.apk`；同页提供 SHA-256 和公开签名证书。安装后名称为 **Koenami**。v1.0 用户首次需要手动覆盖安装 v1.1，此后可在应用内检查更新。
 
 - Android 10 / API 29 起，需要联网和近期版本的 Android System WebView / Chrome。已验证 WebView 155；Android 10 镜像内置 74 版无法运行当前官网，须更新。
 - 麦克风按钮进行普通录音，结束后在历史中播放和导出；“实时”仅实时测量，不新增录音历史。
 - 右上角菜单提供原始界面、优化界面、纯网页安全模式、官网工具、隐私和开源许可。
+- 三点菜单新增“检查更新”和默认每日自动检查，来自本仓库的最新正式 GitHub Release；下载和安装均需用户确认。在“应用更新设置”可关闭检查、开启后台通知，详见 [更新机制](docs/UPDATES.md)。
 - 五项声音参数默认完整展示；地图支持全屏；分析入口固定在录音栏上方。
 - 导出使用系统保存或分享面板，导入使用系统文件选择器，不申请存储权限。
 
