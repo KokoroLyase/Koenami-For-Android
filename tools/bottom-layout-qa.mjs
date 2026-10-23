@@ -32,7 +32,8 @@ try {
     const fullscreen=await geometry();
     await client.evaluate('window.__koenamiAndroid.back()');
     await settle();
-    await client.tap('#koenami-android-map-full');
+    // Same action as the native menu; the helper stays hidden in the official map.
+    await client.evaluate("document.querySelector('#koenami-android-map-full').click()");
     await settle();
     const mapFullscreen=await client.evaluate(`(()=>{const g=document.querySelector('#voice-map').getBoundingClientRect(),f=document.querySelector('.transport').getBoundingClientRect();return {visible:g.top>=0&&g.height>0&&g.bottom<=f.top+1,analysisHidden:getComputedStyle(document.querySelector('.signal-panel')).display==='none'};})()`);
     await client.evaluate('window.__koenamiAndroid.back();document.querySelector(".studio").scrollTop=0');
@@ -51,6 +52,6 @@ const bad=results.filter(r=>[r.initial,r.expanded,r.fullscreen,r.restored].some(
   r.initial.controls.some(c=>c.rect.left<0||c.rect.right>r.width+1||c.rect.top<r.initial.footer.top||c.rect.bottom>r.height+1||!c.hit)||
   r.collapsed.open||r.collapsed.panel.height>40||!r.collapsed.hit||
   !r.mapFullscreen.visible||!r.mapFullscreen.analysisHidden||
-  r.initial.legend.right>r.initial.tools.left||Math.abs(r.initial.legend.bottom-r.initial.tools.bottom)>1);
+  r.initial.legend.bottom>r.initial.tools.top);
 console.log(JSON.stringify({cases:results.length,failed:bad.map(r=>({width:r.width,height:r.height,initial:r.initial,collapsed:r.collapsed,mapFullscreen:r.mapFullscreen}))},null,2));
 if(bad.length)process.exitCode=1;

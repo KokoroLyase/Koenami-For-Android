@@ -1,9 +1,9 @@
 html[data-koenami-android]{--koenami-radius:16px;--koenami-transport-height:128px;--koenami-gap:8px}
-html[data-koenami-android] :is(button,input,koe-select){font-size:max(14px,1em)}
-html[data-koenami-android] :is(button,.icon-button,.upload-button){min-height:48px;min-width:48px}
+html[data-koenami-android] :is(button,input,koe-select):where(:not(.profile-panel *):not(.graph *)){font-size:max(14px,1em)}
+html[data-koenami-android] :is(button,.icon-button,.upload-button):where(:not(.profile-panel *):not(.graph *)){min-height:48px;min-width:48px}
 html[data-koenami-android] koe-select::part(trigger){min-height:48px}
 html[data-koenami-android] :is(input[type=search],input[type=text]){font-size:16px;min-height:48px}
-html[data-koenami-android] :is(button,input,koe-select):focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+html[data-koenami-android] :is(button,input,koe-select):where(:not(.profile-panel *):not(.graph *)):focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 html[data-koenami-android] [id^=koenami-android-]{font:inherit;color:var(--ink)}
 html[data-koenami-android] :is(dialog,.toolbar,.transport){background:var(--surface)}
 @media(prefers-reduced-motion:reduce){html[data-koenami-android] *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}

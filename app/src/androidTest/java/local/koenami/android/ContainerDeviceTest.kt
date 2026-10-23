@@ -49,7 +49,7 @@ class ContainerDeviceTest {
         assertEquals("true",js("window.isSecureContext && !!window.KoenamiFiles && window.top===window"))
     }
     @Test fun tenVisualSwitchesPreserveBusinessNodes() {
-        val raw=js("JSON.stringify((()=>{const record=document.querySelector('#record'),canvas=document.querySelector('#voice-map');for(let i=0;i<10;i++){window.__koenamiAndroid.visual(false);window.__koenamiAndroid.visual(true);}return {record:record===document.querySelector('#record'),canvas:canvas===document.querySelector('#voice-map'),styles:document.querySelectorAll('#koenami-android-style').length,tools:document.querySelectorAll('#koenami-android-tools').length};})())")
+        val raw=js("JSON.stringify((()=>{const record=document.querySelector('#record'),canvas=document.querySelector('#voice-map');for(let i=0;i<10;i++){window.__koenamiAndroid.visual(false);window.__koenamiAndroid.visual(true);}return {record:record===document.querySelector('#record'),canvas:canvas===document.querySelector('#voice-map'),styles:document.querySelectorAll('#koenami-android-style').length,tools:document.querySelectorAll('.toolbar').length};})())")
         val result=JSONObject(JSONTokener(raw).nextValue() as String)
         assertTrue(result.getBoolean("record"));assertTrue(result.getBoolean("canvas"))
         assertEquals(1,result.getInt("styles"));assertEquals(1,result.getInt("tools"))

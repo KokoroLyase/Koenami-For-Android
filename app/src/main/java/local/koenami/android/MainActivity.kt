@@ -79,9 +79,9 @@ class MainActivity : AppCompatActivity() {
             setImageResource(R.drawable.ic_more_vert)
             imageTintList = android.content.res.ColorStateList.valueOf(MaterialColors.getColor(root,com.google.android.material.R.attr.colorOnSurface))
             background = android.util.TypedValue().let { value -> theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless,value,true); androidx.appcompat.content.res.AppCompatResources.getDrawable(this@MainActivity,value.resourceId) }
-            contentDescription = "应用菜单：检查更新、官网工具、界面模式及恢复"
+            contentDescription = "应用菜单：检查更新、地图全屏、界面模式及恢复"
             setOnClickListener { menu() }
-        }, FrameLayout.LayoutParams(menuSize,menuSize,android.view.Gravity.TOP or android.view.Gravity.END))
+        }, FrameLayout.LayoutParams(menuSize,(36 * resources.displayMetrics.density).toInt(),android.view.Gravity.TOP or android.view.Gravity.END))
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val insets = ViewCompat.getRootWindowInsets(root)
@@ -158,10 +158,10 @@ class MainActivity : AppCompatActivity() {
     }
     private fun menu() {
         AlertDialog.Builder(this).setTitle("应用设置 / 恢复").setItems(arrayOf(
-            "检查更新", "应用更新设置（每天自动检查）",
+            "检查更新", "应用更新设置（每天自动检查）", "地图全屏 / 退出全屏",
             "原始官方界面（保留文件适配）", "Android 优化界面", "纯网页安全模式 / 恢复系统适配", "重新打开普通话官网",
-            "兼容性诊断", "在系统浏览器打开官网", "隐私、备份与限制", "开源许可与署名", "更新 Android System WebView", "官网设置与工具"
-        )) { _, which -> when (which - 2) {
+            "兼容性诊断", "在系统浏览器打开官网", "隐私、备份与限制", "开源许可与署名", "更新 Android System WebView"
+        )) { _, which -> when (which - 3) {
             0 -> { preferences.optimized = false; enhancement.setVisual(false); status("原始官方界面；系统适配保留") }
             1 -> { if (safe) status("请先恢复系统适配") else { preferences.optimized = true; enhancement.setVisual(true); status("Android 优化界面") } }
             2 -> stopBefore { safe = !safe; preferences.safeMode = safe; rebuild() }
@@ -171,9 +171,9 @@ class MainActivity : AppCompatActivity() {
             6 -> AlertDialog.Builder(this).setTitle("非官方开源客户端").setMessage("训练内容、Worker/WASM、API 与官网原有统计由官网提供。应用不新增统计。实时模式不新增历史。进入后台请求官网停止普通录音并保存；未提交录音遇到异常终止可能丢失。卸载或清除数据会丢失本地历史；官网 ZIP 并非完整数据库恢复包。建议定期将重要录音导出到应用之外。").setPositiveButton("知道了", null).show()
             7 -> licenses()
             8 -> openExternal("https://play.google.com/store/apps/details?id=com.google.android.webview")
-            9 -> web.evaluateJavascript("(()=>{const b=document.getElementById('koenami-android-tools');if(b)b.click();window.scrollTo(0,0)})()",null)
-            -2 -> updates.manual()
-            -1 -> updates.settings()
+            -3 -> updates.manual()
+            -2 -> updates.settings()
+            -1 -> if (safe || !preferences.optimized) status("当前模式不支持地图全屏，请先启用 Android 优化界面") else web.evaluateJavascript("document.getElementById('koenami-android-map-full')?.click()",null)
         } }.show()
     }
     private fun licenses() {
